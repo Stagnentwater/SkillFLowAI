@@ -13,7 +13,12 @@ export type Database = {
         Row: {
           c_name: string | null
           content_prompt: string | null
+          course_modules: Json | null
+          cover_image: string | null
           created_at: string
+          creator_id: string | null
+          creator_name: string | null
+          description: string | null
           enrolled_count: number | null
           id: number
           skill_offered: Json | null
@@ -21,7 +26,12 @@ export type Database = {
         Insert: {
           c_name?: string | null
           content_prompt?: string | null
+          course_modules?: Json | null
+          cover_image?: string | null
           created_at?: string
+          creator_id?: string | null
+          creator_name?: string | null
+          description?: string | null
           enrolled_count?: number | null
           id?: number
           skill_offered?: Json | null
@@ -29,7 +39,12 @@ export type Database = {
         Update: {
           c_name?: string | null
           content_prompt?: string | null
+          course_modules?: Json | null
+          cover_image?: string | null
           created_at?: string
+          creator_id?: string | null
+          creator_name?: string | null
+          description?: string | null
           enrolled_count?: number | null
           id?: number
           skill_offered?: Json | null
@@ -38,30 +53,39 @@ export type Database = {
       }
       Learner_Profile: {
         Row: {
+          avatar: string | null
           Courses: Json | null
+          Courses_Enrolled: Json | null
           created_at: string
           Email: string | null
           id: number
+          last_course_visited_id: string | null
           n_textual_solve: number | null
           n_visual_solve: number | null
           Name: string | null
           Skills: Json | null
         }
         Insert: {
+          avatar?: string | null
           Courses?: Json | null
+          Courses_Enrolled?: Json | null
           created_at?: string
           Email?: string | null
           id?: number
+          last_course_visited_id?: string | null
           n_textual_solve?: number | null
           n_visual_solve?: number | null
           Name?: string | null
           Skills?: Json | null
         }
         Update: {
+          avatar?: string | null
           Courses?: Json | null
+          Courses_Enrolled?: Json | null
           created_at?: string
           Email?: string | null
           id?: number
+          last_course_visited_id?: string | null
           n_textual_solve?: number | null
           n_visual_solve?: number | null
           Name?: string | null
@@ -102,9 +126,11 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          courses_enrolled: Json | null
           created_at: string
           full_name: string | null
           id: string
+          last_course_visited_id: string | null
           skills: Json | null
           textual_points: number | null
           updated_at: string
@@ -112,9 +138,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          courses_enrolled?: Json | null
           created_at?: string
           full_name?: string | null
           id: string
+          last_course_visited_id?: string | null
           skills?: Json | null
           textual_points?: number | null
           updated_at?: string
@@ -122,9 +150,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          courses_enrolled?: Json | null
           created_at?: string
           full_name?: string | null
           id?: string
+          last_course_visited_id?: string | null
           skills?: Json | null
           textual_points?: number | null
           updated_at?: string

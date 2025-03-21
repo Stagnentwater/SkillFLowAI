@@ -39,14 +39,16 @@ export const createCourse = async (
       updatedAt: new Date().toISOString(),
     };
     
-    // Create course in Supabase - use Courses_Table for now
+    // Create course in Supabase Courses_Table
     const { data, error } = await supabase
       .from('Courses_Table')
       .insert({
         id: parseInt(courseId.replace(/-/g, '').substring(0, 9), 16) % 1000000000, // Generate a numeric ID from UUID
         c_name: newCourse.title,
+        description: newCourse.description,
         content_prompt: newCourse.systemPrompt,
         skill_offered: newCourse.skillsOffered,
+        cover_image: newCourse.coverImage,
         enrolled_count: 0,
         created_at: newCourse.createdAt
       })

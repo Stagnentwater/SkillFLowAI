@@ -8,10 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth/AuthContext';
 import { useUser } from '@/context/UserContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-const skills = [
+const predefinedSkills = [
   'JavaScript', 'Python', 'Java', 'HTML/CSS', 'React', 
   'Node.js', 'SQL', 'Data Science', 'Machine Learning',
   'Design', 'Marketing', 'Writing', 'Project Management'
@@ -23,6 +23,8 @@ const UserProfileForm = () => {
   const [name, setName] = useState(user?.name || '');
   const [selectedSkills, setSelectedSkills] = useState<string[]>(user?.skills || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCustomSkill, setShowCustomSkill] = useState(false);
+  const [customSkill, setCustomSkill] = useState('');
   const navigate = useNavigate();
 
   const toggleSkill = (skill: string) => {
@@ -31,6 +33,14 @@ const UserProfileForm = () => {
         ? prev.filter(s => s !== skill) 
         : [...prev, skill]
     );
+  };
+
+  const addCustomSkill = () => {
+    if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+      setSelectedSkills(prev => [...prev, customSkill.trim()]);
+      setCustomSkill('');
+      setShowCustomSkill(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +56,24 @@ const UserProfileForm = () => {
       
       // Update profile in Supabase if authenticated
       if (user?.id) {
-        const { error } = await supabase
+        console.log('Updating user profile with skills:', selectedSkills);
+        
+        // 1. Update auth user metadata first
+        const { error: authError } = await supabase.auth.updateUser({
+          data: { 
+            name,
+            skills: selectedSkills,
+          }
+        });
+        
+        if (authError) {
+          console.error('Error updating auth metadata:', authError);
+          toast.error('Failed to update user metadata');
+          return;
+        }
+        
+        // 2. Update the profiles table
+        const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: user.id,
@@ -55,10 +82,56 @@ const UserProfileForm = () => {
             updated_at: new Date().toISOString()
           });
           
-        if (error) {
-          console.error('Error updating Supabase profile:', error);
+        if (profileError) {
+          console.error('Error updating Supabase profiles table:', profileError);
           toast.error('Failed to update profile in database');
           return;
+        }
+        
+        // 3. Also update the Learner_Profile table
+        // First check if the user already exists in Learner_Profile
+        const { data: existingLearner, error: checkError } = await supabase
+          .from('Learner_Profile')
+          .select('*')
+          .eq('Email', user.email)
+          .maybeSingle();
+        
+        if (checkError) {
+          console.error('Error checking Learner_Profile:', checkError);
+        }
+        
+        // Create or update Learner_Profile
+        if (existingLearner) {
+          // Update existing learner profile
+          const { error: learnerUpdateError } = await supabase
+            .from('Learner_Profile')
+            .update({
+              Name: name,
+              Skills: selectedSkills,
+            })
+            .eq('Email', user.email);
+            
+          if (learnerUpdateError) {
+            console.error('Error updating Learner_Profile:', learnerUpdateError);
+            toast.error('Failed to update learner profile');
+          }
+        } else {
+          // Create new learner profile
+          const { error: learnerCreateError } = await supabase
+            .from('Learner_Profile')
+            .insert({
+              Email: user.email,
+              Name: name,
+              Skills: selectedSkills,
+              n_visual_solve: 0,
+              n_textual_solve: 0,
+              Courses: []
+            });
+            
+          if (learnerCreateError) {
+            console.error('Error creating Learner_Profile:', learnerCreateError);
+            toast.error('Failed to create learner profile');
+          }
         }
       }
       
@@ -69,7 +142,7 @@ const UserProfileForm = () => {
       });
       
       toast.success('Profile updated successfully');
-      navigate('/home');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
@@ -100,7 +173,7 @@ const UserProfileForm = () => {
         </p>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {skills.map((skill) => (
+          {predefinedSkills.map((skill) => (
             <div 
               key={skill} 
               className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -118,6 +191,59 @@ const UserProfileForm = () => {
               </Label>
             </div>
           ))}
+          
+          {/* Custom skills that were added */}
+          {selectedSkills
+            .filter(skill => !predefinedSkills.includes(skill))
+            .map((customSkill) => (
+              <div 
+                key={customSkill} 
+                className="flex items-center space-x-2 p-3 border border-primary rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Checkbox 
+                  id={`skill-${customSkill}`}
+                  checked={true}
+                  onCheckedChange={() => toggleSkill(customSkill)}
+                />
+                <Label 
+                  htmlFor={`skill-${customSkill}`}
+                  className="text-sm cursor-pointer flex-1"
+                >
+                  {customSkill}
+                </Label>
+              </div>
+            ))}
+            
+          {/* Add custom skill button */}
+          {!showCustomSkill ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="flex items-center justify-center p-3 border border-dashed"
+              onClick={() => setShowCustomSkill(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Other Skill
+            </Button>
+          ) : (
+            <div className="flex items-center p-3 border rounded-lg bg-muted">
+              <Input
+                value={customSkill}
+                onChange={(e) => setCustomSkill(e.target.value)}
+                placeholder="Type your skill"
+                className="mr-2"
+                autoFocus
+              />
+              <Button 
+                type="button" 
+                size="sm"
+                onClick={addCustomSkill}
+                disabled={!customSkill.trim()}
+              >
+                Add
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       

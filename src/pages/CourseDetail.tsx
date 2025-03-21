@@ -17,6 +17,8 @@ import ModuleSidebar from '@/components/course/ModuleSidebar';
 import ModuleContent from '@/components/course/ModuleContent';
 import ModuleQuiz from '@/components/course/ModuleQuiz';
 import EmptyModuleState from '@/components/course/EmptyModuleState';
+import CourseModules from '@/components/course/CourseModules';
+import { fetchCourseById } from '@/services/courseService';
 
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -25,20 +27,37 @@ const CourseDetail = () => {
   
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showModuleList, setShowModuleList] = useState(true);
   
-  // Find the course in our enrolled or created courses
+  // Fetch the course directly from the database if not found in enrolled or created courses
   useEffect(() => {
-    if (courseId) {
-      const allCourses = [...enrolledCourses, ...userCourses];
-      const foundCourse = allCourses.find(c => c.id === courseId);
+    const loadCourse = async () => {
+      if (!courseId) return;
       
-      if (foundCourse) {
-        setCourse(foundCourse);
-        setLoading(false);
-      } else {
+      try {
+        setLoading(true);
+        
+        // First check if the course is in our enrolled or created courses
+        const allCourses = [...enrolledCourses, ...userCourses];
+        const foundCourse = allCourses.find(c => c.id === courseId);
+        
+        if (foundCourse) {
+          setCourse(foundCourse);
+        } else {
+          // If not found locally, fetch from database
+          const fetchedCourse = await fetchCourseById(courseId);
+          if (fetchedCourse) {
+            setCourse(fetchedCourse);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading course:', error);
+      } finally {
         setLoading(false);
       }
-    }
+    };
+    
+    loadCourse();
   }, [courseId, enrolledCourses, userCourses]);
 
   // Initialize course modules hook only when both course and user are available
@@ -109,42 +128,61 @@ const CourseDetail = () => {
             viewCount={course.viewCount}
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Module Sidebar */}
-            <div className="md:col-span-1">
-              <ModuleSidebar 
-                modules={courseModules.modules}
-                selectedModuleId={courseModules.selectedModule?.id || null}
-                onModuleSelect={courseModules.handleModuleSelect}
-              />
+          {/* Module List / Content Toggle */}
+          <div className="mb-6 flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowModuleList(!showModuleList)}
+            >
+              {showModuleList ? 'View Interactive Content' : 'View Module List'}
+            </Button>
+          </div>
+          
+          {showModuleList ? (
+            /* Course Modules List View */
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8">
+              <h2 className="text-2xl font-bold mb-6">Course Modules</h2>
+              <CourseModules modules={course.courseModules || []} />
             </div>
-            
-            {/* Module Content */}
-            <div className="md:col-span-3">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-                {!courseModules.selectedModule ? (
-                  <EmptyModuleState />
-                ) : courseModules.generatingContent ? (
-                  <EmptyModuleState isLoading={true} />
-                ) : courseModules.showQuiz && courseModules.quiz ? (
-                  <ModuleQuiz 
-                    quiz={courseModules.quiz}
-                    selectedAnswers={courseModules.selectedAnswers}
-                    onAnswerSelect={courseModules.handleAnswerSelect}
-                    onSubmit={courseModules.handleQuizSubmit}
-                  />
-                ) : courseModules.moduleContent ? (
-                  <ModuleContent 
-                    title={courseModules.selectedModule.title}
-                    content={courseModules.moduleContent}
-                    visualPoints={user?.visualPoints || 0}
-                    textualPoints={user?.textualPoints || 0}
-                    onTakeQuiz={() => courseModules.setShowQuiz(true)}
-                  />
-                ) : null}
+          ) : (
+            /* Interactive Course View */
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              {/* Module Sidebar */}
+              <div className="md:col-span-1">
+                <ModuleSidebar 
+                  modules={courseModules.modules}
+                  selectedModuleId={courseModules.selectedModule?.id || null}
+                  onModuleSelect={courseModules.handleModuleSelect}
+                />
+              </div>
+              
+              {/* Module Content */}
+              <div className="md:col-span-3">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                  {!courseModules.selectedModule ? (
+                    <EmptyModuleState />
+                  ) : courseModules.generatingContent ? (
+                    <EmptyModuleState isLoading={true} />
+                  ) : courseModules.showQuiz && courseModules.quiz ? (
+                    <ModuleQuiz 
+                      quiz={courseModules.quiz}
+                      selectedAnswers={courseModules.selectedAnswers}
+                      onAnswerSelect={courseModules.handleAnswerSelect}
+                      onSubmit={courseModules.handleQuizSubmit}
+                    />
+                  ) : courseModules.moduleContent ? (
+                    <ModuleContent 
+                      title={courseModules.selectedModule.title}
+                      content={courseModules.moduleContent}
+                      visualPoints={user?.visualPoints || 0}
+                      textualPoints={user?.textualPoints || 0}
+                      onTakeQuiz={() => courseModules.setShowQuiz(true)}
+                    />
+                  ) : null}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
       

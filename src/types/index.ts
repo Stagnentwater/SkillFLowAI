@@ -22,6 +22,7 @@ export interface Course {
   createdAt: string;
   updatedAt: string;
   systemPrompt: string;
+  courseModules?: any[]; // For storing course modules
 }
 
 export interface Module {
@@ -29,6 +30,11 @@ export interface Module {
   title: string;
   courseId: string;
   order: number;
+  orderNum?: number;
+  type?: 'visual' | 'textual' | 'mixed';
+  createdAt?: string;
+  updatedAt?: string;
+  description?: string;
 }
 
 export interface ModuleContent {
@@ -37,12 +43,16 @@ export interface ModuleContent {
   content: string;
   visualContent?: string[];
   textualContent?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Quiz {
   id: string;
   moduleId: string;
   questions: Question[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Question {

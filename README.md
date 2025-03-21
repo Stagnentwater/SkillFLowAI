@@ -1,2 +1,1 @@
-# SkillFLowAI
- A Revolutionary product to streamline learning and personalise it using ai
+Made with lonely ness from ayushman
