@@ -11,6 +11,7 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  loading: boolean; // Added this property to match usage in ProtectedRoute
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<AuthResponse>;
   logout: () => Promise<void>;

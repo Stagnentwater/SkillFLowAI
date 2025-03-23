@@ -6,6 +6,7 @@ import Hero from '@/components/ui/Hero';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { ArrowRight, Sparkles, BarChart3, Zap, ChevronRight, Book, MessageSquare } from 'lucide-react';
+import { HoverCard } from '@radix-ui/react-hover-card';
 
 const Index = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -106,7 +107,7 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-16 items-center">
               <div className="space-y-12">
                 <div className={`transition-all duration-500 ${activeStep === 0 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
                   <div className="flex">

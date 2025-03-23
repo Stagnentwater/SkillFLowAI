@@ -1,92 +1,85 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Course } from '@/types';
-import { Eye, User, Calendar } from 'lucide-react';
+import React from "react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Course } from "@/types";
 
 interface CourseCardProps {
   course: Course;
   isCreator?: boolean;
+  isEnrolled?: boolean;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course, isCreator = false }) => {
-  const formattedDate = new Date(course.createdAt).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  // Fallback image if none provided
-  const coverImage = course.coverImage || 'https://images.unsplash.com/photo-1516259762381-22954d7d3ad2';
+const CourseCard = ({ course, isCreator = false, isEnrolled = false }: CourseCardProps) => {
+  const { id, title, description, coverImage, viewCount, skillsOffered, creatorName } = course;
 
   return (
-    <Link 
-      to={`/course/${course.id}`} 
-      className="block group transition-all duration-300 rounded-xl overflow-hidden bg-gray-800 shadow-sm hover:shadow-lg border border-gray-700 transform hover:-translate-y-1"
-    >
-      <div className="relative aspect-video w-full overflow-hidden">
-        <img 
-          src={coverImage}
-          alt={course.title}
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+    <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg">
+      <div className="aspect-video overflow-hidden relative">
+        <img
+          src={coverImage || "/placeholder.svg"}
+          alt={title}
+          className="object-cover w-full h-full transition-transform hover:scale-105"
         />
-        
-        {/* Skills tag overlay */}
-        {course.skillsOffered && course.skillsOffered.length > 0 && (
-          <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-1">
-            {course.skillsOffered.slice(0, 3).map((skill, index) => (
-              <span 
-                key={index}
-                className="inline-block text-xs px-2 py-1 rounded-full bg-gray-900/80 backdrop-blur-sm font-medium text-primary"
-              >
-                {skill}
-              </span>
-            ))}
-            {course.skillsOffered.length > 3 && (
-              <span className="inline-block text-xs px-2 py-1 rounded-full bg-gray-900/80 backdrop-blur-sm font-medium text-primary">
-                +{course.skillsOffered.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
-        
-        {/* Creator badge */}
         {isCreator && (
-          <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium bg-emerald-500 text-white">
-            Your Course
+          <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 text-xs rounded-md">
+            Creator
           </div>
         )}
       </div>
-      
-      <div className="p-5">
-        <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-          {course.title}
-        </h3>
-        
-        <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-          {course.description}
-        </p>
-        
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center text-gray-400">
-              <User className="w-4 h-4 mr-1" />
-              {course.creatorName || 'SkillFlowAI'}
-            </span>
-            
-            <span className="flex items-center text-gray-400">
-              <Eye className="w-4 h-4 mr-1" />
-              {course.viewCount || 0}
-            </span>
-          </div>
-          
-          <span className="flex items-center text-gray-400">
-            <Calendar className="w-4 h-4 mr-1" />
-            {formattedDate}
-          </span>
+      <CardHeader className="p-4 pb-2 flex-grow">
+        <CardTitle className="text-xl line-clamp-2">{title}</CardTitle>
+        <div className="flex items-center text-sm text-muted-foreground mt-1">
+          <span>By {creatorName}</span>
         </div>
-      </div>
-    </Link>
+      </CardHeader>
+      <CardContent className="p-4 py-2 flex-grow">
+        <p className="text-muted-foreground text-sm line-clamp-3">{description}</p>
+        
+        {skillsOffered && skillsOffered.length > 0 && (
+          <div className="mt-4">
+            <div className="flex flex-wrap gap-1">
+              {skillsOffered.slice(0, 3).map((skill, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary"
+                >
+                  {skill}
+                </span>
+              ))}
+              {skillsOffered.length > 3 && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                  +{skillsOffered.length - 3}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex items-center justify-between">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Users className="mr-1 h-4 w-4" />
+          <span>{viewCount || 0} enrolled</span>
+        </div>
+        
+        {isEnrolled ? (
+          <Link to={`/course/${id}`}>
+            <Button size="sm" variant="outline">
+              <BookOpen className="mr-2 h-4 w-4" />
+              View Modules
+            </Button>
+          </Link>
+        ) : (
+          <Link to={`/course/${id}`}>
+            <Button size="sm">
+              View Details
+            </Button>
+          </Link>
+        )}
+      </CardFooter>
+    </Card>
   );
 };
 
