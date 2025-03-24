@@ -115,6 +115,7 @@ const UserProfileForm = () => {
             console.error('Error updating Learner_Profile:', learnerUpdateError);
             toast.error('Failed to update learner profile');
           }
+          navigate("/home");
         } else {
           // Create new learner profile
           const { error: learnerCreateError } = await supabase
@@ -142,7 +143,7 @@ const UserProfileForm = () => {
       });
       
       toast.success('Profile updated successfully');
-      navigate('/dashboard');
+      navigate('/home');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
