@@ -132,6 +132,8 @@ const UserProfileForm = () => {
           if (learnerCreateError) {
             console.error('Error creating Learner_Profile:', learnerCreateError);
             toast.error('Failed to create learner profile');
+          }else{
+            navigate("/home");
           }
         }
       }
@@ -149,6 +151,7 @@ const UserProfileForm = () => {
       toast.error('Failed to update profile');
     } finally {
       setIsSubmitting(false);
+      navigate('/home');
     }
   };
 
