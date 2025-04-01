@@ -61,6 +61,7 @@ const ProfileSettings = () => {
   };
 
   const handleDeleteAccount = async () => {
+    
     toast('This is a demo feature. Account deletion would happen here.');
     await logout();
   };

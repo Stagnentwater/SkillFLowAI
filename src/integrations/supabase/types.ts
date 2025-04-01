@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      modules: {
+        Row: {
+          id: string                // UUID, primary key
+          title: string             // text, not null
+          course_id: string         // text, not null
+          order: number             // integer, not null
+          type: string              // text, not null (default: 'mixed')
+          description: string | null  // text, nullable
+          created_at: string        // timestamp with time zone, not null
+          updated_at: string        // timestamp with time zone, not null
+        }
+        Insert: {
+          id?: string
+          title?: string
+          course_id?: string
+          order?: number
+          type?: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          course_id?: string
+          order?: number
+          type?: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      
+      
       Courses_Table: {
         Row: {
           c_name: string | null

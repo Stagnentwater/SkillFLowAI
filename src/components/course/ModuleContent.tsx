@@ -1,8 +1,8 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ModuleContent as ModuleContentType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import mermaid from 'mermaid';
 
 interface ModuleContentProps {
   title: string;
@@ -19,6 +19,13 @@ const ModuleContent = ({
   textualPoints,
   onTakeQuiz
 }: ModuleContentProps) => {
+  useEffect(() => {
+    if (content.visualContent) {
+      mermaid.initialize({ startOnLoad: true });
+      mermaid.contentLoaded();
+    }
+  }, [content]);
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">{title}</h2>
@@ -28,13 +35,10 @@ const ModuleContent = ({
         
         {content.visualContent && content.visualContent.length > 0 && (
           <div className="my-8">
-            {content.visualContent.map((imgSrc, index) => (
-              <img 
-                key={index}
-                src={imgSrc}
-                alt={`Visual content ${index + 1}`}
-                className="rounded-lg my-4"
-              />
+            {content.visualContent.map((diagram, index) => (
+              <pre key={index} className="mermaid">
+                {diagram}
+              </pre>
             ))}
           </div>
         )}

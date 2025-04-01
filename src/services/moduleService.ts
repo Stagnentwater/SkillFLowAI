@@ -6,34 +6,33 @@ import { v4 as uuidv4 } from 'uuid';
 // Fetch all modules for a course
 export const fetchModules = async (courseId: string): Promise<Module[]> => {
   try {
-    // Check if the modules table exists
+    // Fetch the modules for the specified course
     const { data: modulesData, error: modulesError } = await supabase
-      .from('module_content')
-      .select('*');
-    
+      .from('modules') // Ensure the 'modules' table exists in your Supabase database
+      .select('*') // Fetch all columns
+      .eq('course_id', courseId)
+      .order('order', { ascending: true }); // Order by the 'order' column
+
+    // Map the fetched data to the Module type
+    const modules: Module[] = modulesData?.map((module: any) => ({
+      id: module.id,
+      title: module.title,
+      description: module.description,
+      courseId: module.courseId,
+      order: module.order,
+      type: module.type,
+      createdAt: module.created_at,
+      updatedAt: module.updated_at,
+    })) || [];
+
     if (modulesError) {
-      console.error('Error checking modules table:', modulesError);
+      console.error('Error fetching modules:', modulesError);
       return [];
     }
-    
-    // If the table exists, fetch the modules for this course
-    // For now, we're returning a placeholder since the 'modules' table doesn't exist
-    return [
-      {
-        id: '1',
-        title: 'Introduction',
-        courseId: courseId,
-        order: 1,
-        type: 'mixed'
-      },
-      {
-        id: '2',
-        title: 'Getting Started',
-        courseId: courseId,
-        order: 2,
-        type: 'textual'
-      }
-    ];
+
+    // Return the mapped modules
+    return modules;
+
   } catch (error) {
     console.error('Exception in fetchModules:', error);
     return [];

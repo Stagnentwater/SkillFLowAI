@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ModuleContent } from '@/types';
 import { v4 as uuidv4 } from 'uuid';

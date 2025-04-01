@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
 import { Loader2 } from 'lucide-react';
+import { Module } from '@/types/types';
 
 // Custom hook for course modules
 import { useCourseModules } from '@/hooks/useCourseModules';
@@ -28,6 +28,9 @@ const CourseDetail = () => {
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showModuleList, setShowModuleList] = useState(true);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [moduleContent, setModuleContent] = useState<ModuleContentType | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Fetch the course directly from the database if not found in enrolled or created courses
   useEffect(() => {
@@ -78,6 +81,28 @@ const CourseDetail = () => {
       courseModules.loadModules();
     }
   }, [course, user]);
+
+  const onModuleSelect = async (module: Module) => {
+    setSelectedModule(module);
+    setModuleContent(null); // Clear previous content
+    setIsLoading(true); // Show loading state
+
+    try {
+      // Fetch generated content for the selected module
+      const response = await fetch(`/api/generate-course-content?moduleId=${module.id}`);
+      if (!response.ok) {
+        console.error('Failed to generate content:', response.statusText);
+        return;
+      }
+
+      const contentData = await response.json();
+      setModuleContent(contentData); // Set the generated content
+    } catch (error) {
+      console.error('Error generating content:', error);
+    } finally {
+      setIsLoading(false); // Hide loading state
+    }
+  };
   
   if (loading) {
     return (
@@ -101,7 +126,7 @@ const CourseDetail = () => {
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               The course you're looking for doesn't exist or you don't have access to it.
             </p>
-            <Link to="/dashboard">
+            <Link to="/home">
               <Button>
                 Back to Dashboard
               </Button>
@@ -146,7 +171,7 @@ const CourseDetail = () => {
             </div>
           ) : (
             /* Interactive Course View */
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="grid id-cols-1 md:grid-cols-4 gap-8">
               {/* Module Sidebar */}
               <div className="md:col-span-1">
                 <ModuleSidebar 
@@ -159,26 +184,19 @@ const CourseDetail = () => {
               {/* Module Content */}
               <div className="md:col-span-3">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-                  {!courseModules.selectedModule ? (
-                    <EmptyModuleState />
-                  ) : courseModules.generatingContent ? (
-                    <EmptyModuleState isLoading={true} />
-                  ) : courseModules.showQuiz && courseModules.quiz ? (
-                    <ModuleQuiz 
-                      quiz={courseModules.quiz}
-                      selectedAnswers={courseModules.selectedAnswers}
-                      onAnswerSelect={courseModules.handleAnswerSelect}
-                      onSubmit={courseModules.handleQuizSubmit}
-                    />
-                  ) : courseModules.moduleContent ? (
+                  {isLoading ? (
+                    <p className="text-gray-500 dark:text-gray-400">Generating content...</p>
+                  ) : moduleContent ? (
                     <ModuleContent 
-                      title={courseModules.selectedModule.title}
-                      content={courseModules.moduleContent}
+                      title={selectedModule?.title || ''}
+                      content={moduleContent}
                       visualPoints={user?.visualPoints || 0}
                       textualPoints={user?.textualPoints || 0}
-                      onTakeQuiz={() => courseModules.setShowQuiz(true)}
+                      onTakeQuiz={() => console.log('Take Quiz')}
                     />
-                  ) : null}
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">Select a module to view its content.</p>
+                  )}
                 </div>
               </div>
             </div>

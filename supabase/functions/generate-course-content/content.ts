@@ -4,6 +4,7 @@ import { GEMINI_API_KEY, GEMINI_API_URL, extractJsonFromGeminiResponse, createJs
 interface GenerateContentRequest {
   moduleId: string;
   moduleTitle: string;
+  moduleDescription: string;
   courseTitle: string;
   courseDescription: string;
   userId: string;
@@ -16,6 +17,7 @@ export async function generateContent(data: GenerateContentRequest) {
   const { 
     moduleId, 
     moduleTitle, 
+    moduleDescription,
     courseTitle, 
     courseDescription, 
     userId,
@@ -38,6 +40,7 @@ You are an AI educator that creates personalized learning content.
 Course: ${courseTitle}
 Course Description: ${courseDescription}
 Module: ${moduleTitle}
+Module description : tailor your response according to the heading covered in this:- ${moduleDescription}
 User Skills: ${userSkills.join(', ')}
 Learning Style: ${learningStyle} (${isVisualLearner ? 'Prefers diagrams and visual examples' : 'Prefers detailed text explanations'})
 
@@ -49,7 +52,7 @@ Create comprehensive learning content for this module. The content should be:
 Return ONLY a valid JSON object with this structure:
 {
   "content": "Main content text with markdown formatting",
-  "visualContent": ["URL or description for diagram 1", "URL or description for diagram 2"],
+  "visualContent": [{"specfiy mermaid or url","URL or mermaid diagram for diagram 1"}, {"specify mermaid or url","URL or description for diagram 2"}],
   "textualContent": "Additional detailed text explanations if the user prefers textual learning"
 }
 
