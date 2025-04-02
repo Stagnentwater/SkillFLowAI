@@ -17,6 +17,9 @@ import CourseDetail from "./pages/CourseDetail";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import { useAuth } from "./context/AuthContext";
+import { ChatbotProvider } from "@/context/ChatbotContext";
+import Chatbot from "@/components/ui/Chatbot";
+
 
 const queryClient = new QueryClient();
 
@@ -67,7 +70,10 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+            <ChatbotProvider>
               <AppRoutes />
+              <Chatbot />
+            </ChatbotProvider>
             </BrowserRouter>
           </TooltipProvider>
         </UserProvider>
