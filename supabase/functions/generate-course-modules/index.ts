@@ -18,7 +18,7 @@ serve(async (req) => {
     const { title, description, systemPrompt, skills } = await req.json();
     
     // Get API key from environment
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) {
       throw new Error('Missing GEMINI_API_KEY environment variable');
     }

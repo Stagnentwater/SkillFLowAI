@@ -372,3 +372,10 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+  // Define and export VisualContent if it doesn't exist
+export interface VisualContent {
+  type: 'mermaid' | 'url';
+  diagram?: string; // For mermaid diagrams
+  url?: string; // For URLs
+}

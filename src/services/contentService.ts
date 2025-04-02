@@ -3,6 +3,13 @@ import { ModuleContent } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { Json } from '@/integrations/supabase/types';
 
+// Define the VisualContent type
+type VisualContent = {
+  type: 'mermaid' | 'url';
+  diagram?: string;
+  url: string;
+};
+
 // Fetch content for a module
 export const fetchModuleContent = async (moduleId: string): Promise<ModuleContent | null> => {
   try {
@@ -19,17 +26,20 @@ export const fetchModuleContent = async (moduleId: string): Promise<ModuleConten
     
     if (!data) return null;
     
-    // Transform visual_content from Json to string[]
-    let visualContent: string[] = [];
+    // Transform visual_content from Json to VisualContent[]
+    let visualContent: VisualContent[] = [];
     if (data.visual_content) {
       if (typeof data.visual_content === 'string') {
         try {
-          visualContent = JSON.parse(data.visual_content);
+          visualContent = JSON.parse(data.visual_content) as VisualContent[];
         } catch (e) {
+          console.error('Error parsing visual_content JSON:', e);
           visualContent = [];
         }
       } else if (Array.isArray(data.visual_content)) {
-        visualContent = data.visual_content.map(item => String(item));
+        visualContent = data.visual_content.filter(item => 
+          item && typeof item === 'object' && 'type' in item && 'url' in item
+        ) as VisualContent[];
       }
     }
     
@@ -52,7 +62,7 @@ export const createModuleContent = async (
   moduleId: string,
   content: string,
   textualContent: string,
-  visualContent: Record<string, any>
+  visualContent: Record<string, VisualContent>
 ): Promise<ModuleContent | null> => {
   try {
     const contentId = uuidv4();
@@ -82,16 +92,18 @@ export const createModuleContent = async (
       return null;
     }
     
-    // Convert the visual_content back to string[] for the return value
-    let visualContentArray: string[] = [];
+    // Convert the visual_content back to VisualContent[] for the return value
+    let visualContentArray: VisualContent[] = [];
     if (data.visual_content) {
-      if (typeof data.visual_content === 'object' && !Array.isArray(data.visual_content)) {
-        // Handle object format
-        visualContentArray = Object.values(data.visual_content)
-          .flat()
-          .map(item => String(item));
+      if (typeof data.visual_content === 'string') {
+        try {
+          visualContentArray = JSON.parse(data.visual_content) as VisualContent[];
+        } catch (e) {
+          console.error('Error parsing visual_content:', e);
+          visualContentArray = [];
+        }
       } else if (Array.isArray(data.visual_content)) {
-        visualContentArray = data.visual_content.map(item => String(item));
+        visualContentArray = data.visual_content as VisualContent[];
       }
     }
     
@@ -146,6 +158,37 @@ export const updateModuleContent = async (
     return true;
   } catch (error) {
     console.error('Exception in updateModuleContent:', error);
+    return false;
+  }
+};
+
+export const saveModuleContent = async (
+  moduleId: string,
+  content: string,
+  textualContent: string,
+  visualContent: Json
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('module_content')
+      .insert({
+        module_id: moduleId,
+        content,
+        textual_content: textualContent,
+        visual_content: visualContent,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('Error saving module content:', error);
+      return false;
+    }
+
+    console.log('Module content saved successfully');
+    return true;
+  } catch (error) {
+    console.error('Exception saving module content:', error);
     return false;
   }
 };

@@ -41,7 +41,7 @@ export interface ModuleContent {
   id: string;
   moduleId: string;
   content: string;
-  visualContent?: string[];
+  visualContent?: VisualContent[];
   textualContent?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -70,4 +70,10 @@ export interface UserCourseProgress {
   quizScores: Record<string, number>;
   lastAccessed: string;
   personalizedContent?: Record<string, any>;
+}
+// Define and export VisualContent if missing
+export interface VisualContent {
+  type: 'mermaid' | 'url';
+  diagram?: string;
+  url?: string;
 }

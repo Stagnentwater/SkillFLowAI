@@ -1,7 +1,7 @@
 import React from 'react';
 import { Module } from '@/types';
 import { Book, LockIcon, ClipboardList } from 'lucide-react';
-
+import {onModuleSelect} from '@/services/api';
 interface ModuleSidebarProps {
   modules: Module[];
   selectedModuleId: string | null;
@@ -11,12 +11,18 @@ interface ModuleSidebarProps {
 }
 
 const ModuleSidebar = ({
-  modules = [],
+  modules,
   selectedModuleId,
   onModuleSelect,
   completedModules = [],
-  unlockedModules = []
-}: ModuleSidebarProps) => {
+  unlockedModules = [],
+}: {
+  modules: Module[];
+  selectedModuleId: string | null;
+  onModuleSelect: (module: Module) => void;
+  completedModules?: string[];
+  unlockedModules?: string[];
+}) => {
   // If no modules, show a placeholder
   if (modules.length === 0) {
     return (
@@ -57,7 +63,7 @@ const ModuleSidebar = ({
                   } 
                   ${!isUnlocked ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
-                onClick={() => isUnlocked ? onModuleSelect(module) : null}
+                onClick={() => onModuleSelect(isUnlocked ? module : null)}
                 disabled={!isUnlocked}
               >
                 {isUnlocked ? (

@@ -25,10 +25,29 @@ const CourseDetail = () => {
   const { user } = useAuth();
   const { enrolledCourses, userCourses } = useUser();
   
-  const [course, setCourse] = useState<any>(null);
+  type CourseType = {
+    id: string;
+    title: string;
+    description: string;
+    skillsOffered: string[];
+    coverImage: string;
+    viewCount: number;
+    courseModules: Module[];
+    systemPrompt?: string;
+  };
+
+  const [course, setCourse] = useState<CourseType | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModuleList, setShowModuleList] = useState(true);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  type ModuleContentType = {
+    id: string;
+    moduleId:string,
+    title: string;
+    content: string;
+    [key: string]: string | number | boolean | object | null | undefined; // Add additional fields as needed
+  };
+
   const [moduleContent, setModuleContent] = useState<ModuleContentType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -45,12 +64,21 @@ const CourseDetail = () => {
         const foundCourse = allCourses.find(c => c.id === courseId);
         
         if (foundCourse) {
-          setCourse(foundCourse);
+          setCourse({
+            ...foundCourse,
+            courseModules: foundCourse.courseModules || [],
+          });
         } else {
-          // If not found locally, fetch from database
           const fetchedCourse = await fetchCourseById(courseId);
+          setCourse({
+            ...fetchedCourse,
+            courseModules: fetchedCourse.courseModules || [],
+          });
           if (fetchedCourse) {
-            setCourse(fetchedCourse);
+            setCourse({
+              ...fetchedCourse,
+              courseModules: fetchedCourse.courseModules || [],
+            });
           }
         }
       } catch (error) {
@@ -96,7 +124,11 @@ const CourseDetail = () => {
       }
 
       const contentData = await response.json();
-      setModuleContent(contentData); // Set the generated content
+      setModuleContent({
+        ...contentData,
+        id: module.id, // Ensure id is included
+        moduleId: module.id, // Ensure moduleId is included
+      } as ModuleContentType); // Explicitly cast to ModuleContentType
     } catch (error) {
       console.error('Error generating content:', error);
     } finally {

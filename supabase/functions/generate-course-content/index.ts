@@ -5,6 +5,7 @@ import { corsHeaders } from "./utils.ts";
 
 import { supabase } from '../../../src/integrations/supabase/client.ts'; // Adjusted the relative path
 import { generateContent } from './content';
+import { saveModuleContent } from '@/services/contentService';
 
 export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -71,6 +72,18 @@ export default async function handler(req: Request): Promise<Response> {
     });
 
     const contentData = await contentResponse.json();
+
+    // Save the generated content to the database
+    const saveSuccess = await saveModuleContent(
+      moduleId,
+      contentData.content,
+      contentData.textualContent,
+      contentData.visualContent
+    );
+
+    if (!saveSuccess) {
+      return new Response('Failed to save module content', { status: 500 });
+    }
 
     return new Response(JSON.stringify(contentData), {
       headers: { 'Content-Type': 'application/json' },
