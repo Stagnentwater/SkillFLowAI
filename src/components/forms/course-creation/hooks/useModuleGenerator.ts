@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
 
-const GEMINI_API_KEY = 'AIzaSyCmcMnSWDJqm_OA_9MiyVYxrXhg9iAcXT8';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent';
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
+const GEMINI_API_URL = process.env.VITE_GEMINI_URL;
 
 export const useModuleGenerator = () => {
   const [creatingStatus, setCreatingStatus] = useState('');
