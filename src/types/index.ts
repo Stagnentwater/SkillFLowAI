@@ -22,19 +22,22 @@ export interface Course {
   createdAt: string;
   updatedAt: string;
   systemPrompt: string;
-  courseModules?: any[]; // For storing course modules
+  courseModules?: Module[]; // For storing course modules
 }
 
 export interface Module {
   id: string;
   title: string;
-  courseId: string;
+  course_id: string;  // Primary field from database
+  courseId?: string;  // Alias for course_id
   order: number;
-  orderNum?: number;
+  orderNum?: number;  // Alias for order
   type?: 'visual' | 'textual' | 'mixed';
+  description: string;  // This is required
   createdAt?: string;
   updatedAt?: string;
-  description?: string;
+  created_at?: string;  // Database field name
+  updated_at?: string;  // Database field name
 }
 
 export interface ModuleContent {
@@ -71,9 +74,12 @@ export interface UserCourseProgress {
   lastAccessed: string;
   personalizedContent?: Record<string, any>;
 }
-// Define and export VisualContent if missing
+
+// Define VisualContent interface
 export interface VisualContent {
-  type: 'mermaid' | 'url';
+  type: 'mermaid' | 'url' | 'excalidraw';
   diagram?: string;
   url?: string;
+  title?: string;
+  description?: string;
 }

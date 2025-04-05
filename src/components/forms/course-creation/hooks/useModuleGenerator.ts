@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
 
-const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
-const GEMINI_API_URL = process.env.VITE_GEMINI_URL;
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GEMINI_API_URL = import.meta.env.VITE_GEMINI_URL;
 
 export const useModuleGenerator = () => {
   const [creatingStatus, setCreatingStatus] = useState('');

@@ -9,41 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      modules: {
-        Row: {
-          id: string                // UUID, primary key
-          title: string             // text, not null
-          course_id: string         // text, not null
-          order: number             // integer, not null
-          type: string              // text, not null (default: 'mixed')
-          description: string | null  // text, nullable
-          created_at: string        // timestamp with time zone, not null
-          updated_at: string        // timestamp with time zone, not null
-        }
-        Insert: {
-          id?: string
-          title?: string
-          course_id?: string
-          order?: number
-          type?: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          title?: string
-          course_id?: string
-          order?: number
-          type?: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      
-      
       Courses_Table: {
         Row: {
           c_name: string | null
@@ -155,6 +120,39 @@ export type Database = {
           textual_content?: string | null
           updated_at?: string
           visual_content?: Json | null
+        }
+        Relationships: []
+      }
+      modules: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          order: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id: string
+          order: number
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order?: number
+          title?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -372,10 +370,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-  // Define and export VisualContent if it doesn't exist
-export interface VisualContent {
-  type: 'mermaid' | 'url';
-  diagram?: string; // For mermaid diagrams
-  url?: string; // For URLs
-}

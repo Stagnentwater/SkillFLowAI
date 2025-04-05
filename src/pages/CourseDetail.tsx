@@ -6,16 +6,17 @@ import Footer from '@/components/layout/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
 import { Loader2 } from 'lucide-react';
-import { Module } from '@/types/types';
+import { Module, ModuleContent as ModuleContentType } from '@/types';
+import { toast } from 'sonner';
 
-// Custom hook for course modules
+// Custom hooks
 import { useCourseModules } from '@/hooks/useCourseModules';
+import { useCourseContentGenerator } from '@/hooks/useCourseContentGenerator';
 
 // Course components
 import CourseHeader from '@/components/course/CourseHeader';
 import ModuleSidebar from '@/components/course/ModuleSidebar';
 import ModuleContent from '@/components/course/ModuleContent';
-import ModuleQuiz from '@/components/course/ModuleQuiz';
 import EmptyModuleState from '@/components/course/EmptyModuleState';
 import CourseModules from '@/components/course/CourseModules';
 import { fetchCourseById } from '@/services/courseService';
@@ -40,16 +41,23 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [showModuleList, setShowModuleList] = useState(true);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  type ModuleContentType = {
-    id: string;
-    moduleId:string,
-    title: string;
-    content: string;
-    [key: string]: string | number | boolean | object | null | undefined; // Add additional fields as needed
-  };
+  
+  // Use our new hook for content generation
+  const { 
+    isLoading: contentLoading, 
+    moduleContent, 
+    getOrGenerateContent,
+    error: contentError
+  } = useCourseContentGenerator({
+    onContentLoaded: (content) => {
+      // If content was loaded successfully, we can clear any errors
+      if (contentError) {
+        setError(null);
+      }
+    }
+  });
 
-  const [moduleContent, setModuleContent] = useState<ModuleContentType | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Fetch the course directly from the database if not found in enrolled or created courses
   useEffect(() => {
@@ -70,10 +78,6 @@ const CourseDetail = () => {
           });
         } else {
           const fetchedCourse = await fetchCourseById(courseId);
-          setCourse({
-            ...fetchedCourse,
-            courseModules: fetchedCourse.courseModules || [],
-          });
           if (fetchedCourse) {
             setCourse({
               ...fetchedCourse,
@@ -110,29 +114,16 @@ const CourseDetail = () => {
     }
   }, [course, user]);
 
+  // Handle module selection with better error handling
   const onModuleSelect = async (module: Module) => {
     setSelectedModule(module);
-    setModuleContent(null); // Clear previous content
-    setIsLoading(true); // Show loading state
-
+    setError(null);
+    
     try {
-      // Fetch generated content for the selected module
-      const response = await fetch(`/api/generate-course-content?moduleId=${module.id}`);
-      if (!response.ok) {
-        console.error('Failed to generate content:', response.statusText);
-        return;
-      }
-
-      const contentData = await response.json();
-      setModuleContent({
-        ...contentData,
-        id: module.id, // Ensure id is included
-        moduleId: module.id, // Ensure moduleId is included
-      } as ModuleContentType); // Explicitly cast to ModuleContentType
-    } catch (error) {
-      console.error('Error generating content:', error);
-    } finally {
-      setIsLoading(false); // Hide loading state
+      await getOrGenerateContent(module);
+    } catch (err) {
+      console.error('Error selecting module:', err);
+      setError('Failed to load module content. Please try again.');
     }
   };
   
@@ -195,29 +186,46 @@ const CourseDetail = () => {
             </Button>
           </div>
           
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 mb-6 rounded-md">
+              <p className="text-red-800 dark:text-red-300">{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => setError(null)}
+              >
+                Dismiss
+              </Button>
+            </div>
+          )}
+          
           {showModuleList ? (
             /* Course Modules List View */
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8">
               <h2 className="text-2xl font-bold mb-6">Course Modules</h2>
-              <CourseModules modules={course.courseModules || []} />
+              <CourseModules modules={courseModules.modules.length > 0 ? courseModules.modules : course.courseModules || []} />
             </div>
           ) : (
             /* Interactive Course View */
-            <div className="grid id-cols-1 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {/* Module Sidebar */}
               <div className="md:col-span-1">
                 <ModuleSidebar 
-                  modules={courseModules.modules}
-                  selectedModuleId={courseModules.selectedModule?.id || null}
-                  onModuleSelect={courseModules.handleModuleSelect}
+                  modules={courseModules.modules.length > 0 ? courseModules.modules : course.courseModules || []}
+                  selectedModuleId={selectedModule?.id || null}
+                  onModuleSelect={onModuleSelect}
                 />
               </div>
               
               {/* Module Content */}
               <div className="md:col-span-3">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-                  {isLoading ? (
-                    <p className="text-gray-500 dark:text-gray-400">Generating content...</p>
+                  {contentLoading ? (
+                    <div className="flex flex-col items-center justify-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400">Loading module content...</p>
+                    </div>
                   ) : moduleContent ? (
                     <ModuleContent 
                       title={selectedModule?.title || ''}
@@ -227,7 +235,9 @@ const CourseDetail = () => {
                       onTakeQuiz={() => console.log('Take Quiz')}
                     />
                   ) : (
-                    <p className="text-gray-500 dark:text-gray-400">Select a module to view its content.</p>
+                    <EmptyModuleState 
+                      message="Select a module from the sidebar to view its content."
+                    />
                   )}
                 </div>
               </div>

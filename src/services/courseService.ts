@@ -1,8 +1,8 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Course } from '@/types';
 import { Json } from '@/integrations/supabase/types';
 import { jsonArrayToStringArray } from './utilService';
+import { createModule, syncModulesToModuleTable, checkModulesExist } from './moduleService';
 
 export const transformCourseData = (data: any): Course => {
   return {
@@ -38,10 +38,46 @@ export const fetchCourseById = async (courseId: string): Promise<Course | null> 
     
     if (!data) return null;
     
+    // Check if modules exist for this course in the modules table
+    const modulesExist = await checkModulesExist(courseId);
+    
+    // If no modules exist but there are course_modules in the JSON, sync them to the modules table
+    if (!modulesExist && data.course_modules && Array.isArray(data.course_modules) && data.course_modules.length > 0) {
+      console.log(`Modules not found for course ${courseId}, syncing from course_modules JSON`);
+      await syncModulesToModuleTable(courseId, data.course_modules);
+    } else {
+      console.log(`Modules already exist for course ${courseId}`);
+    }
+    
     return transformCourseData(data);
   } catch (error) {
     console.error('Exception fetching course:', error);
     return null;
+  }
+};
+
+const createModulesInModuleTable = async (courseId: string, modules: any[]): Promise<void> => {
+  try {
+    if (!modules || !Array.isArray(modules) || modules.length === 0) {
+      console.log('No modules to create in module table');
+      return;
+    }
+    
+    console.log(`Creating ${modules.length} modules in module table for course ${courseId}`);
+    
+    for (let i = 0; i < modules.length; i++) {
+      const moduleData = modules[i];
+      await createModule(
+        courseId,
+        moduleData.title || `Module ${i + 1}`,
+        i + 1,
+        'mixed'
+      );
+    }
+    
+    console.log('Modules created successfully in module table');
+  } catch (error) {
+    console.error('Error creating modules in module table:', error);
   }
 };
 
@@ -90,6 +126,13 @@ export const createCourseInDB = async (courseData: {
     }
 
     console.log("Course created successfully:", data);
+    
+    // Create modules in the module table
+    if (data && data.id && courseData.courseModules) {
+      console.log("Syncing modules to module table...");
+      await syncModulesToModuleTable(data.id.toString(), courseData.courseModules);
+    }
+    
     return transformCourseData(data);
   } catch (error) {
     console.error('Exception creating course:', error);
@@ -117,7 +160,6 @@ export const fetchAllCourses = async (): Promise<Course[]> => {
   }
 };
 
-// Update enrolled count for a course
 export const updateCourseEnrolledCount = async (courseId: string): Promise<boolean> => {
   try {
     // First get the current course to get the current enrolled_count

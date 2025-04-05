@@ -1,12 +1,48 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { extractJsonFromGeminiResponse } from "../generate-course-content/utils.ts";
 
 // CORS headers for all responses
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Helper to extract JSON from Gemini responses
+async function extractJsonFromGeminiResponse(response: Response) {
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error('Gemini API error:', errorData);
+    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+  }
+
+  try {
+    const geminiResponse = await response.json();
+
+    // Ensure the response contains the expected structure
+    if (!geminiResponse.candidates || geminiResponse.candidates.length === 0) {
+      throw new Error('No candidates found in Gemini response');
+    }
+
+    const textContent = geminiResponse.candidates[0].content.parts[0].text;
+
+    // Extract JSON if it's wrapped in markdown code blocks
+    const jsonMatch = textContent.match(/```json\n([\s\S]*?)\n```/) || 
+                      textContent.match(/```\n([\s\S]*?)\n```/) ||
+                      [null, textContent];
+
+    if (!jsonMatch[1]) {
+      throw new Error('No valid JSON found in Gemini response');
+    }
+
+    const jsonStr = jsonMatch[1].trim();
+
+    // Parse the JSON string
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error('Error parsing Gemini response:', error);
+    throw new Error('Failed to parse data from AI response');
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -18,7 +54,7 @@ serve(async (req) => {
     const { title, description, systemPrompt, skills } = await req.json();
     
     // Get API key from environment
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) {
       throw new Error('Missing GEMINI_API_KEY environment variable');
     }
@@ -29,7 +65,7 @@ serve(async (req) => {
       
       Course Title: ${title}
       Course Description: ${description}
-      Course Skills: ${skills.join(', ')}
+      Course Skills: ${skills ? skills.join(', ') : ''}
       Additional Details: ${systemPrompt}
       
       Return a JSON array with exactly 10 modules. Each module should have:
@@ -73,12 +109,6 @@ serve(async (req) => {
         }),
       }
     );
-    
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Gemini API error:', errorData);
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
-    }
     
     // Extract JSON from response
     const modules = await extractJsonFromGeminiResponse(response);
