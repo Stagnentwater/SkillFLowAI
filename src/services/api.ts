@@ -1,18 +1,37 @@
-
 import { Course } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
-// Helper function to get stored data or initialize it (for local storage fallback)
+/**
+ * Helper function to safely convert values to numbers
+ * Only returns numbers, filtering out any non-numeric values
+ */
+const safelyConvertToNumbers = (values: any[]): number[] => {
+  return values
+    .map(value => {
+      // Handle string numbers
+      if (typeof value === 'string') {
+        const parsed = Number(value);
+        return !isNaN(parsed) ? parsed : null;
+      }
+      // Pass through numbers
+      else if (typeof value === 'number') {
+        return value;
+      }
+      // Filter out other types
+      return null;
+    })
+    .filter((num): num is number => num !== null);
+};
+
 const getStoredData = <T>(key: string, defaultValue: T): T => {
   const storedData = localStorage.getItem(key);
   return storedData ? JSON.parse(storedData) : defaultValue;
 };
 
-// Helper to convert Json array to string array
-const jsonArrayToStringArray = (jsonArray: Json | null): string[] => {
+export const jsonArrayToStringArray = (jsonArray: Json | null): string[] => {
   if (!jsonArray) return [];
   if (Array.isArray(jsonArray)) {
     return jsonArray.map(item => String(item));
@@ -20,62 +39,88 @@ const jsonArrayToStringArray = (jsonArray: Json | null): string[] => {
   return [];
 };
 
-// Create a new course
 export const createCourse = async (
   courseData: Omit<Course, 'id' | 'creatorId' | 'creatorName' | 'viewCount' | 'createdAt' | 'updatedAt'>, 
   creatorId: string,
   creatorName: string
-): Promise<Course> => {
+): Promise<Course | null> => {
   try {
-    // Create new course object with UUID
-    const courseId = uuidv4();
-    const newCourse: Course = {
-      id: courseId,
-      ...courseData,
-      creatorId,
-      creatorName,
-      viewCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    console.log("Creating course with data:", courseData);
     
-    // Create course in Supabase Courses_Table
+    // Ensure we're authenticated
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      console.error('User is not authenticated');
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from('Courses_Table')
       .insert({
-        id: parseInt(courseId.replace(/-/g, '').substring(0, 9), 16) % 1000000000, // Generate a numeric ID from UUID
-        c_name: newCourse.title,
-        description: newCourse.description,
-        content_prompt: newCourse.systemPrompt,
-        skill_offered: newCourse.skillsOffered,
-        cover_image: newCourse.coverImage,
+        c_name: courseData.title,
+        description: courseData.description,
+        content_prompt: courseData.systemPrompt,
+        skill_offered: courseData.skillsOffered,
+        cover_image: courseData.coverImage,
         enrolled_count: 0,
-        created_at: newCourse.createdAt
+        creator_id: creatorId,
+        creator_name: creatorName,
+        created_at: new Date().toISOString()
       })
-      .select();
-      
+      .select()
+      .single();
+
     if (error) {
       console.error('Error creating course in Supabase:', error);
       toast.error('Failed to save course to database');
       
-      // Fallback to local storage if Supabase fails
-      // Get current courses or initialize empty array
-      const courses = getStoredData<Course[]>('courses', []);
+      // Create a fallback course for local storage
+      const tempCourse: Course = {
+        id: uuidv4(),
+        title: courseData.title,
+        description: courseData.description,
+        coverImage: courseData.coverImage,
+        skillsOffered: courseData.skillsOffered,
+        creatorId: creatorId,
+        creatorName: creatorName,
+        viewCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        systemPrompt: courseData.systemPrompt
+      };
       
-      // Add new course and update storage
-      const updatedCourses = [...courses, newCourse];
+      const courses = getStoredData<Course[]>('courses', []);
+      const updatedCourses = [...courses, tempCourse];
       localStorage.setItem('courses', JSON.stringify(updatedCourses));
       
-      // Also update userCourses for quick access
       const userCourses = getStoredData<Course[]>('userCourses', []);
-      const updatedUserCourses = [...userCourses, newCourse];
+      const updatedUserCourses = [...userCourses, tempCourse];
       localStorage.setItem('userCourses', JSON.stringify(updatedUserCourses));
+      
+      return tempCourse;
     } else {
       console.log('Course created successfully in Supabase:', data);
+      
+      // Transform the response into a Course object
+      const createdCourse: Course = {
+        id: String(data.id),
+        title: data.c_name || '',
+        description: data.description || '',
+        coverImage: data.cover_image || '/placeholder.svg',
+        creatorId: data.creator_id || '',
+        creatorName: data.creator_name || '',
+        skillsOffered: Array.isArray(data.skill_offered) 
+          ? jsonArrayToStringArray(data.skill_offered)
+          : [],
+        viewCount: data.enrolled_count || 0,
+        createdAt: data.created_at || new Date().toISOString(),
+        updatedAt: data.created_at || new Date().toISOString(), // Using created_at since updated_at might not exist
+        systemPrompt: data.content_prompt || ''
+      };
+      
       toast.success('Course created and saved to database');
+      return createdCourse;
     }
-    
-    return newCourse;
   } catch (error) {
     console.error('Unexpected error creating course:', error);
     toast.error('Something went wrong while creating the course');
@@ -83,7 +128,6 @@ export const createCourse = async (
   }
 };
 
-// Fetch all available courses
 export const fetchAllCourses = async (): Promise<Course[]> => {
   try {
     const { data, error } = await supabase
@@ -95,23 +139,21 @@ export const fetchAllCourses = async (): Promise<Course[]> => {
       console.error('Error fetching courses from Supabase:', error);
       toast.error('Failed to load courses from database');
       
-      // Fallback to local storage
       const storedCourses = localStorage.getItem('courses');
       return storedCourses ? JSON.parse(storedCourses) : [];
     }
     
-    // Transform data to match Course type
     const courses: Course[] = data.map(course => ({
-      id: String(course.id), // Ensure ID is a string
+      id: String(course.id),
       title: course.c_name || '',
       description: course.content_prompt || '',
-      coverImage: '/placeholder.svg', // Default placeholder
-      creatorId: 'unknown', // This info isn't stored in Courses_Table
-      creatorName: 'SkillFlowAI User', // Default name
+      coverImage: course.cover_image || '/placeholder.svg',
+      creatorId: course.creator_id || 'unknown',
+      creatorName: course.creator_name || 'SkillFlowAI User',
       skillsOffered: jsonArrayToStringArray(course.skill_offered),
       viewCount: course.enrolled_count || 0,
       createdAt: course.created_at,
-      updatedAt: course.created_at, // No updated_at in this table
+      updatedAt: course.created_at, // Using created_at as fallback
       systemPrompt: course.content_prompt || ''
     }));
     
@@ -123,10 +165,20 @@ export const fetchAllCourses = async (): Promise<Course[]> => {
   }
 };
 
-// Enroll in a course
 export const enrollInCourse = async (userId: string, courseId: string): Promise<boolean> => {
   try {
-    // Check if already enrolled in Supabase
+    console.log(`Attempting to enroll user ${userId} in course ${courseId}`);
+    
+    // Parse courseId to number for database query
+    const numericCourseId = parseInt(courseId);
+    
+    if (isNaN(numericCourseId)) {
+      console.error('Invalid course ID - must be a number', courseId);
+      toast.error('Invalid course ID');
+      return false;
+    }
+    
+    // First check if the user is already enrolled
     const { data: existingEnrollment, error: checkError } = await supabase
       .from('user_course_progress')
       .select('*')
@@ -136,19 +188,22 @@ export const enrollInCourse = async (userId: string, courseId: string): Promise<
     
     if (checkError) {
       console.error('Error checking enrollment:', checkError);
-    }
-    
-    if (existingEnrollment) {
-      toast.info('You are already enrolled in this course');
+      toast.error(`Error checking enrollment: ${checkError.message}`);
       return false;
     }
     
-    // Create enrollment in Supabase
+    if (existingEnrollment) {
+      console.log('User already enrolled in this course');
+      toast.info('You are already enrolled in this course');
+      return true;
+    }
+    
+    // Create a new enrollment record in user_course_progress
     const { error } = await supabase
       .from('user_course_progress')
       .insert({
         user_id: userId,
-        course_id: courseId,
+        course_id: courseId, // Use the string ID directly
         last_accessed: new Date().toISOString(),
         completed_module_ids: [],
         quiz_scores: {}
@@ -156,13 +211,11 @@ export const enrollInCourse = async (userId: string, courseId: string): Promise<
     
     if (error) {
       console.error('Error enrolling in course in Supabase:', error);
-      toast.error('Failed to enroll in the course');
+      toast.error(`Failed to enroll: ${error.message}`);
       
       // Fallback to local storage
-      // Get existing enrollments or initialize
       const enrollments = getStoredData<any[]>('userEnrollments', []);
       
-      // Create new enrollment
       const newEnrollment = {
         userId,
         courseId,
@@ -171,36 +224,112 @@ export const enrollInCourse = async (userId: string, courseId: string): Promise<
         lastAccessed: new Date().toISOString(),
       };
       
-      // Update enrollments
       const updatedEnrollments = [...enrollments, newEnrollment];
       localStorage.setItem('userEnrollments', JSON.stringify(updatedEnrollments));
+      return false;
     } else {
-      // Try to increment enrolled count for the course
       try {
-        // Get current enrolled count
+        // Increment enrolled count on the course
         const { data: courseData } = await supabase
           .from('Courses_Table')
           .select('enrolled_count')
-          .eq('id', parseInt(courseId, 10))
+          .eq('id', numericCourseId)
           .single();
           
         if (courseData) {
           const currentCount = courseData.enrolled_count || 0;
           
-          // Update enrolled count
           await supabase
             .from('Courses_Table')
             .update({ enrolled_count: currentCount + 1 })
-            .eq('id', parseInt(courseId, 10));
+            .eq('id', numericCourseId);
         }
+        
+        // Update Learner_Profile to add the course ID to Courses_Enrolled array
+        const { data: learnerProfile, error: profileError } = await supabase
+          .from('Learner_Profile')
+          .select('Courses_Enrolled')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        if (profileError) {
+          console.error('Error fetching learner profile:', profileError);
+        } else {
+          // Extract the existing enrolled courses array, ensuring we get a proper array
+          let coursesEnrolled: number[] = [];
+          
+          if (learnerProfile && learnerProfile.Courses_Enrolled) {
+            // Convert to an array of numbers
+            if (Array.isArray(learnerProfile.Courses_Enrolled)) {
+              coursesEnrolled = safelyConvertToNumbers(learnerProfile.Courses_Enrolled);
+            }
+          }
+          
+          // Add the new course ID if it's not already in the array
+          if (!coursesEnrolled.includes(numericCourseId)) {
+            coursesEnrolled.push(numericCourseId);
+            
+            if (learnerProfile) {
+              const { error: updateError } = await supabase
+                .from('Learner_Profile')
+                .update({ Courses_Enrolled: coursesEnrolled })
+                .eq('user_id', userId);
+              
+              if (updateError) {
+                console.error('Error updating learner profile:', updateError);
+              }
+            } else {
+              const { error: insertError } = await supabase
+                .from('Learner_Profile')
+                .insert({
+                  user_id: userId,
+                  Courses_Enrolled: coursesEnrolled
+                });
+              
+              if (insertError) {
+                console.error('Error creating learner profile:', insertError);
+              }
+            }
+          }
+        }
+        
+        // Also update the profiles table courses_enrolled
+        const { data: profileData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('courses_enrolled')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (!profilesError && profileData) {
+          let profileCoursesEnrolled: number[] = [];
+          
+          if (profileData.courses_enrolled) {
+            // Convert to an array of numbers
+            if (Array.isArray(profileData.courses_enrolled)) {
+              profileCoursesEnrolled = safelyConvertToNumbers(profileData.courses_enrolled);
+            }
+          }
+          
+          if (!profileCoursesEnrolled.includes(numericCourseId)) {
+            profileCoursesEnrolled.push(numericCourseId);
+            
+            const { error: updateProfileError } = await supabase
+              .from('profiles')
+              .update({ courses_enrolled: profileCoursesEnrolled })
+              .eq('id', userId);
+              
+            if (updateProfileError) {
+              console.error('Error updating profiles courses_enrolled:', updateProfileError);
+            }
+          }
+        }
+        
+        toast.success('Successfully enrolled in the course');
+        return true;
       } catch (incrementError) {
         console.error('Error incrementing enrolled count:', incrementError);
       }
-      
-      toast.success('Successfully enrolled in the course');
     }
-    
-    return true;
   } catch (error) {
     console.error('Error enrolling in course:', error);
     toast.error('Failed to enroll in the course');
@@ -208,7 +337,6 @@ export const enrollInCourse = async (userId: string, courseId: string): Promise<
   }
 };
 
-// Update module progress
 export const updateModuleProgress = async (
   userId: string, 
   courseId: string, 
@@ -216,7 +344,6 @@ export const updateModuleProgress = async (
   completed: boolean
 ): Promise<boolean> => {
   try {
-    // Get existing progress from Supabase
     const { data: progressData, error: getError } = await supabase
       .from('user_course_progress')
       .select('completed_module_ids')
@@ -229,7 +356,6 @@ export const updateModuleProgress = async (
       return false;
     }
     
-    // Explicitly type the array as string[] to fix the TypeScript error
     let completedModules: string[] = progressData?.completed_module_ids || [];
     
     if (completed && !completedModules.includes(moduleId)) {
@@ -238,7 +364,6 @@ export const updateModuleProgress = async (
       completedModules = completedModules.filter(id => id !== moduleId);
     }
     
-    // Update progress in Supabase
     const { error: updateError } = await supabase
       .from('user_course_progress')
       .update({ 
@@ -260,7 +385,6 @@ export const updateModuleProgress = async (
   }
 };
 
-// Update quiz score
 export const updateQuizScore = async (
   userId: string,
   courseId: string,
@@ -270,7 +394,6 @@ export const updateQuizScore = async (
   textualScore: number
 ): Promise<boolean> => {
   try {
-    // Get existing progress from Supabase
     const { data: progressData, error: getError } = await supabase
       .from('user_course_progress')
       .select('quiz_scores')
@@ -283,11 +406,9 @@ export const updateQuizScore = async (
       return false;
     }
     
-    // Update or create quiz score
     let quizScores = progressData?.quiz_scores || {};
     quizScores[moduleId] = score;
     
-    // Update progress in Supabase
     const { error: updateError } = await supabase
       .from('user_course_progress')
       .update({ 
@@ -302,7 +423,6 @@ export const updateQuizScore = async (
       return false;
     }
     
-    // Update user's learning style points
     const { error: profileError } = await supabase
       .from('profiles')
       .update({

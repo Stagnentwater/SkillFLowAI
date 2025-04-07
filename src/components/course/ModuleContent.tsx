@@ -1,12 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { ModuleContent as ModuleContentType, VisualContent, Module } from '@/types';
+import { ModuleContent as ModuleContentType, VisualContent } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import mermaid from 'mermaid';
-import { useCourseContentGenerator } from '@/hooks/useCourseContentGenerator';
-import { Excalidraw } from '@excalidraw/excalidraw';
-import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface ModuleContentProps {
   title: string;
@@ -23,47 +19,70 @@ const ModuleContent = ({
   textualPoints,
   onTakeQuiz,
 }: ModuleContentProps) => {
-  // Initialize mermaid
+  const diagramAttempts = useRef(0);
+  
+  // Initialize mermaid when component mounts
   useEffect(() => {
+    // Initialize mermaid with basic configuration
     mermaid.initialize({
-      startOnLoad: true,
+      startOnLoad: false,
       theme: 'default',
       securityLevel: 'loose',
+      fontFamily: 'sans-serif',
     });
+    
+    // Initial render attempt
+    setTimeout(() => {
+      renderMermaidDiagrams();
+    }, 100);
   }, []);
-
-  // Reference to track rendering of diagrams
-  const renderedDiagrams = useRef(new Set());
-
-  // Render mermaid diagrams when they change or after component mounts
+  
+  // Re-render diagrams when content changes
   useEffect(() => {
-    if (content.visualContent?.length > 0) {
-      content.visualContent.forEach((visual, index) => {
-        if (visual.type === 'mermaid' && visual.diagram) {
-          const diagramId = `mermaid-diagram-${index}`;
-          
-          // Only render if not rendered before
-          if (!renderedDiagrams.current.has(diagramId)) {
-            try {
-              // Need a small delay to ensure the DOM is ready
-              setTimeout(() => {
-                mermaid.render(diagramId, visual.diagram).then(({ svg }) => {
-                  const container = document.getElementById(`mermaid-container-${index}`);
-                  if (container) {
-                    container.innerHTML = svg;
-                    renderedDiagrams.current.add(diagramId);
-                  }
-                });
-              }, 100);
-            } catch (error) {
-              console.error("Failed to render mermaid diagram:", error);
-              toast.error("Failed to render diagram");
-            }
+    if (content?.visualContent?.length) {
+      setTimeout(() => {
+        renderMermaidDiagrams();
+      }, 100);
+    }
+  }, [content]);
+  
+  // Function to manually render all mermaid diagrams
+  const renderMermaidDiagrams = () => {
+    if (!content?.visualContent?.length) return;
+    
+    // Increment attempts counter
+    diagramAttempts.current += 1;
+    
+    content.visualContent.forEach((visual, index) => {
+      if (visual.type === 'mermaid' && visual.diagram) {
+        const containerId = `mermaid-container-${index}`;
+        const container = document.getElementById(containerId);
+        
+        if (container) {
+          try {
+            // Show loading state
+            container.innerHTML = `<div class="flex justify-center p-4"><div class="animate-spin h-6 w-6 border-2 border-gray-500 rounded-full border-t-transparent"></div></div>`;
+            
+            // Create a unique ID for this diagram
+            const diagramId = `mermaid-diagram-${index}-${diagramAttempts.current}`;
+            
+            // Attempt to render the diagram
+            mermaid.render(diagramId, visual.diagram)
+              .then(result => {
+                container.innerHTML = result.svg;
+              })
+              .catch(error => {
+                console.error('Error rendering diagram:', error);
+                container.innerHTML = '<div class="p-4 text-center text-gray-500">Unable to display diagram</div>';
+              });
+          } catch (error) {
+            console.error('Error in rendering process:', error);
+            container.innerHTML = '<div class="p-4 text-center text-gray-500">Unable to display diagram</div>';
           }
         }
-      });
-    }
-  }, [content.visualContent]);
+      }
+    });
+  };
 
   return (
     <div>
@@ -81,6 +100,17 @@ const ModuleContent = ({
         {content.visualContent && content.visualContent.length > 0 && (
           <div className="my-8 space-y-10">
             <h3 className="text-xl font-semibold mt-4 mb-6">Visual Representations</h3>
+            
+            {/* Optional refresh button - can be removed if not needed */}
+            <div className="mb-4">
+              <button 
+                onClick={renderMermaidDiagrams} 
+                className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                Refresh Diagrams
+              </button>
+            </div>
+            
             {Array.isArray(content.visualContent) &&
               content.visualContent.map((visual: VisualContent, index) => (
                 <div
@@ -95,20 +125,16 @@ const ModuleContent = ({
                     <p className="text-gray-600 dark:text-gray-400 mb-4">{visual.description}</p>
                   )}
 
-                  {visual.type === 'excalidraw' && visual.diagram && (
-                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto">
-                      <Excalidraw
-                        initialData={{
-                          elements: JSON.parse(visual.diagram), // For actual Excalidraw JSON
-                          appState: { viewBackgroundColor: '#ffffff' },
-                        }}
-                      />
-                    </div>
-                  )}
-
+                  {/* Handle Mermaid diagrams */}
                   {visual.type === 'mermaid' && visual.diagram && (
-                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto">
-                      <div id={`mermaid-container-${index}`} className="mermaid-diagram"></div>
+                    <div 
+                      id={`mermaid-container-${index}`}
+                      className="mermaid-container bg-gray-50 dark:bg-gray-900 p-4 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto"
+                      style={{ minHeight: '200px' }}
+                    >
+                      <div className="flex justify-center p-4">
+                        <div className="animate-spin h-6 w-6 border-2 border-gray-500 rounded-full border-t-transparent"></div>
+                      </div>
                     </div>
                   )}
 

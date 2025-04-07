@@ -5,26 +5,27 @@ import { useUser } from '@/context/UserContext';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { BookOpen, ArrowRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { fetchAllCourses } from '@/services/api';
 import { Course } from '@/types';
 import CourseCard from '@/components/ui/CourseCard';
 import { toast } from 'sonner';
+import { useDashboardCourses } from '@/hooks/useDashboardCourses';
 
 const Home = () => {
-  const { user } = useAuth();
-  const { enrolledCourses } = useUser();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const { enrolledCourses, loadingCourses } = useDashboardCourses(user, isAuthenticated);
 
   useEffect(() => {
     const loadCourses = async () => {
       try {
         setLoading(true);
-        const allCourses = await fetchAllCourses();
-        setCourses(allCourses);
+        const courses = await fetchAllCourses();
+        setAllCourses(courses);
       } catch (error) {
         console.error('Error loading courses:', error);
         toast.error('Failed to load courses');
@@ -36,8 +37,9 @@ const Home = () => {
     loadCourses();
   }, []);
 
-  // Get user's enrolled courses
+  // Get user's enrolled courses for the dashboard section
   const userEnrolledCourses = enrolledCourses.slice(0, 3);
+  const isLoading = loading || loadingCourses;
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -78,13 +80,13 @@ const Home = () => {
               )}
             </div>
             
-            {loading ? (
+            {isLoading ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : courses.length > 0 ? (
+            ) : allCourses.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((course) => (
+                {allCourses.map((course) => (
                   <CourseCard 
                     key={course.id} 
                     course={course} 

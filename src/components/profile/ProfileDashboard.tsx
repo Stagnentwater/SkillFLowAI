@@ -3,16 +3,17 @@ import React from 'react';
 import { useUser } from '@/context/UserContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import CourseCard from '@/components/ui/CourseCard';
 import { useAuth } from '@/context/AuthContext';
+import { useDashboardCourses } from '@/hooks/useDashboardCourses';
 
 const ProfileDashboard = () => {
-  const { user } = useAuth();
-  const { enrolledCourses, loading } = useUser();
+  const { user, isAuthenticated } = useAuth();
+  const { loadingCourses, enrolledCourses } = useDashboardCourses(user, isAuthenticated);
 
-  if (loading) {
+  if (loadingCourses) {
     return (
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -39,7 +40,10 @@ const ProfileDashboard = () => {
         </div>
       ) : (
         <Card className="p-8 text-center">
-          <h3 className="text-xl font-medium mb-4">You haven't enrolled in any courses yet</h3>
+          <div className="flex flex-col items-center gap-3 mb-4">
+            <BookOpen className="h-12 w-12 text-muted-foreground" />
+            <h3 className="text-xl font-medium">You haven't enrolled in any courses yet</h3>
+          </div>
           <p className="text-muted-foreground mb-6">
             Explore our catalog and find courses that match your interests.
           </p>

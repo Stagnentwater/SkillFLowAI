@@ -64,6 +64,7 @@ export interface Question {
   options: string[];
   correctAnswer: string;
   type: 'visual' | 'textual';
+  imageUrl?: string;  // URL for visual question images
 }
 
 export interface UserCourseProgress {

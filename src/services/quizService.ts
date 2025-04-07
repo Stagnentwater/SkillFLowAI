@@ -9,13 +9,14 @@ const jsonArrayToQuestions = (jsonArray: Json): Question[] => {
   if (Array.isArray(jsonArray)) {
     return jsonArray.map(item => {
       if (typeof item === 'object' && item !== null) {
-        // Type assertion after checking it's an object
+        const questionObj = item as Record<string, any>;
         return {
-          id: ((item as Record<string, any>).id as string) || uuidv4(),
-          text: ((item as Record<string, any>).text as string) || 'Default question',
-          options: ((item as Record<string, any>).options as string[]) || ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
-          correctAnswer: ((item as Record<string, any>).correctAnswer as string) || 'Option 1',
-          type: ((item as Record<string, any>).type as 'visual' | 'textual') || 'textual'
+          id: questionObj.id || uuidv4(),
+          text: questionObj.text || 'Default question',
+          options: Array.isArray(questionObj.options) ? questionObj.options : ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+          correctAnswer: questionObj.correctAnswer || 'Option 1',
+          type: (questionObj.type as 'visual' | 'textual') || 'textual',
+          imageUrl: questionObj.imageUrl
         };
       }
       return {
@@ -33,6 +34,7 @@ const jsonArrayToQuestions = (jsonArray: Json): Question[] => {
 // Fetch quiz for a module
 export const fetchQuiz = async (moduleId: string): Promise<Quiz | null> => {
   try {
+    console.log('Fetching quiz for module:', moduleId);
     const { data, error } = await supabase
       .from('quizzes')
       .select('*')
@@ -46,14 +48,61 @@ export const fetchQuiz = async (moduleId: string): Promise<Quiz | null> => {
     
     if (!data) return null;
     
-    return {
+    const quiz = {
       id: data.id,
       moduleId: data.module_id,
       questions: jsonArrayToQuestions(data.questions),
       updatedAt: data.updated_at
     };
+    
+    console.log('Retrieved quiz:', quiz);
+    return quiz;
   } catch (error) {
     console.error('Exception in fetchQuiz:', error);
+    return null;
+  }
+};
+
+// Generate quiz using Gemini API
+export const generateQuizWithAI = async (
+  courseId: string, 
+  modules: any[],
+  courseTitle: string,
+  courseDescription: string
+): Promise<Question[] | null> => {
+  try {
+    console.log('Generating AI quiz for course:', courseId);
+    
+    // Use direct REST API call instead of function invocation
+    const response = await fetch('https://ncmrsccaleuhlthxkpxq.supabase.co/functions/v1/generate-quiz', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabase.auth.getSession()}`
+      },
+      body: JSON.stringify({
+        modules,
+        courseTitle,
+        courseDescription
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`API returned error: ${errorData.error || response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data || !Array.isArray(data)) {
+      console.error('Invalid response from generate-quiz function:', data);
+      return null;
+    }
+    
+    console.log('Successfully generated quiz questions:', data.length);
+    return data as Question[];
+  } catch (error) {
+    console.error('Exception in generateQuizWithAI:', error);
     return null;
   }
 };
@@ -61,6 +110,8 @@ export const fetchQuiz = async (moduleId: string): Promise<Quiz | null> => {
 // Save a quiz for a module (create or update)
 export const saveQuiz = async (moduleId: string, questions: Question[]): Promise<boolean> => {
   try {
+    console.log('Saving quiz for module:', moduleId, 'with questions:', questions);
+    
     // Check if quiz already exists
     const { data, error: fetchError } = await supabase
       .from('quizzes')
@@ -74,7 +125,6 @@ export const saveQuiz = async (moduleId: string, questions: Question[]): Promise
     }
     
     // Convert questions to a format that Supabase can store
-    // We need to cast our Question[] to Json for Supabase
     const questionsJson = questions as unknown as Json;
     
     if (data) {
@@ -91,6 +141,8 @@ export const saveQuiz = async (moduleId: string, questions: Question[]): Promise
         console.error('Error updating quiz:', updateError);
         return false;
       }
+      
+      console.log('Quiz updated successfully');
     } else {
       // Create new quiz
       const { error: insertError } = await supabase
@@ -106,6 +158,8 @@ export const saveQuiz = async (moduleId: string, questions: Question[]): Promise
         console.error('Error creating quiz:', insertError);
         return false;
       }
+      
+      console.log('Quiz created successfully');
     }
     
     return true;

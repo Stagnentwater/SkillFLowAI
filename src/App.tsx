@@ -16,6 +16,7 @@ import CreateCourse from "./pages/CreateCourse";
 import CourseDetail from "./pages/CourseDetail";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import JobSearch from "./pages/JobSearch";
 import { useAuth } from "./context/AuthContext";
 import { ChatbotProvider } from "@/context/ChatbotContext";
 import Chatbot from "@/components/ui/Chatbot";
@@ -56,6 +57,11 @@ const AppRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/course/:courseId" element={<CourseDetail />} />
+    <Route path="/jobs" element={
+      <ProtectedRoute>
+        <JobSearch />
+      </ProtectedRoute>
+    } />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

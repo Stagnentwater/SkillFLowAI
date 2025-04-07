@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
 import { Loader2 } from 'lucide-react';
-import { Module, ModuleContent as ModuleContentType } from '@/types';
+import { Module, ModuleContent as ModuleContentType, Quiz, Question } from '@/types';
 import { toast } from 'sonner';
 
 // Custom hooks
@@ -17,14 +17,16 @@ import { useCourseContentGenerator } from '@/hooks/useCourseContentGenerator';
 import CourseHeader from '@/components/course/CourseHeader';
 import ModuleSidebar from '@/components/course/ModuleSidebar';
 import ModuleContent from '@/components/course/ModuleContent';
+import ModuleQuiz from '@/components/course/ModuleQuiz';
 import EmptyModuleState from '@/components/course/EmptyModuleState';
 import CourseModules from '@/components/course/CourseModules';
 import { fetchCourseById } from '@/services/courseService';
+import { updateQuizScore } from '@/services/api';
 
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
-  const { enrolledCourses, userCourses } = useUser();
+  const { enrolledCourses, userCourses, updateUserSkills } = useUser();
   
   type CourseType = {
     id: string;
@@ -58,6 +60,10 @@ const CourseDetail = () => {
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
   
   // Fetch the course directly from the database if not found in enrolled or created courses
   useEffect(() => {
@@ -118,12 +124,87 @@ const CourseDetail = () => {
   const onModuleSelect = async (module: Module) => {
     setSelectedModule(module);
     setError(null);
+    setShowQuiz(false);
+    setQuizSubmitted(false);
     
     try {
       await getOrGenerateContent(module);
     } catch (err) {
       console.error('Error selecting module:', err);
       setError('Failed to load module content. Please try again.');
+    }
+  };
+
+  // Handle taking the quiz
+  const handleTakeQuiz = async () => {
+    if (!selectedModule || !user) return;
+    
+    setShowQuiz(true);
+    setGeneratingQuiz(true);
+    
+    try {
+      // Fetch existing quiz or generate a new one
+      await courseModules.getOrGenerateQuiz(selectedModule.id, user.id, {
+        visualRatio: user.visualPoints / (user.visualPoints + user.textualPoints || 1),
+        moduleContent: moduleContent,
+        moduleTitle: selectedModule.title,
+        courseSkills: course?.skillsOffered || []
+      });
+    } catch (err) {
+      console.error('Error generating quiz:', err);
+      setError('Failed to generate quiz. Please try again.');
+    } finally {
+      setGeneratingQuiz(false);
+    }
+  };
+
+  // Handle submitting the quiz
+  const handleQuizSubmit = async () => {
+    if (!user || !courseId || !selectedModule || !courseModules.quiz) return;
+    
+    // Calculate score
+    const questions = courseModules.quiz.questions;
+    let correctAnswers = 0;
+    const totalQuestions = questions.length;
+    
+    for (const question of questions) {
+      if (courseModules.selectedAnswers[question.id] === question.correctAnswer) {
+        correctAnswers++;
+      }
+    }
+    
+    const score = correctAnswers;
+    const passed = score >= (totalQuestions * 0.8); // 80% passing threshold
+    
+    setQuizScore(score);
+    setQuizSubmitted(true);
+    
+    // Calculate visual and textual points earned
+    const visualQuestions = questions.filter(q => q.type === 'visual').length;
+    const textualQuestions = questions.filter(q => q.type === 'textual').length;
+    
+    const visualScore = user.visualPoints + (visualQuestions > 0 ? Math.ceil(score / totalQuestions * visualQuestions) : 0);
+    const textualScore = user.textualPoints + (textualQuestions > 0 ? Math.ceil(score / totalQuestions * textualQuestions) : 0);
+    
+    try {
+      // Update quiz score in database
+      await updateQuizScore(
+        user.id, 
+        courseId, 
+        selectedModule.id,
+        score,
+        visualScore,
+        textualScore
+      );
+      
+      // If user passed, update skills
+      if (passed && course?.skillsOffered && course.skillsOffered.length > 0) {
+        await updateUserSkills([...user.skills, ...course.skillsOffered]);
+        toast.success('You have earned new skills!');
+      }
+    } catch (err) {
+      console.error('Error updating quiz results:', err);
+      toast.error('Failed to save quiz results');
     }
   };
   
@@ -226,13 +307,34 @@ const CourseDetail = () => {
                       <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                       <p className="text-gray-500 dark:text-gray-400">Loading module content...</p>
                     </div>
+                  ) : showQuiz ? (
+                    generatingQuiz ? (
+                      <div className="flex flex-col items-center justify-center py-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400">Generating quiz questions...</p>
+                      </div>
+                    ) : courseModules.quiz ? (
+                      <ModuleQuiz 
+                        quiz={courseModules.quiz}
+                        selectedAnswers={courseModules.selectedAnswers}
+                        onAnswerSelect={courseModules.handleAnswerSelect}
+                        onSubmit={handleQuizSubmit}
+                        submitted={quizSubmitted}
+                        score={quizScore}
+                        totalQuestions={courseModules.quiz.questions.length}
+                      />
+                    ) : (
+                      <EmptyModuleState 
+                        message="Failed to load quiz. Please try again."
+                      />
+                    )
                   ) : moduleContent ? (
                     <ModuleContent 
                       title={selectedModule?.title || ''}
                       content={moduleContent}
                       visualPoints={user?.visualPoints || 0}
                       textualPoints={user?.textualPoints || 0}
-                      onTakeQuiz={() => console.log('Take Quiz')}
+                      onTakeQuiz={handleTakeQuiz}
                     />
                   ) : (
                     <EmptyModuleState 

@@ -35,6 +35,9 @@ const ModuleSidebar = ({
     );
   }
 
+  // Only show the quiz option if there are modules (we need them for the quiz content)
+  const showQuizOption = modules.length > 0;
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
       <h2 className="font-bold text-xl mb-4">Course Modules</h2>
@@ -64,7 +67,7 @@ const ModuleSidebar = ({
                   } 
                   ${!isUnlocked ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
-                onClick={() => onModuleSelect(isUnlocked ? module : null)}
+                onClick={() => isUnlocked ? onModuleSelect(module) : null}
                 disabled={!isUnlocked}
               >
                 {isUnlocked ? (
@@ -87,36 +90,38 @@ const ModuleSidebar = ({
           );
         })}
 
-        {/* Add Quiz Module at the end */}
-        <li key="quiz-module">
-          <button
-            className={`
-              w-full 
-              text-left 
-              px-4 
-              py-3 
-              rounded-lg 
-              transition-colors 
-              flex 
-              items-center 
-              ${selectedModuleId === 'quiz-module' 
-                ? 'bg-primary text-white' 
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-              }
-            `}
-            onClick={() => onModuleSelect({
-              id: "quiz-module",
-              title: "Quiz Module",
-              course_id: "quiz-course",
-              order: 999,
-              description: "Assessment module for the course",
-              type: "mixed"
-            })}
-          >
-            <ClipboardList className="h-4 w-4 mr-2 text-blue-500" />
-            <span>Quiz Module</span>
-          </button>
-        </li>
+        {/* Add Course Quiz at the end (only if we have modules) */}
+        {showQuizOption && (
+          <li key="quiz-module">
+            <button
+              className={`
+                w-full 
+                text-left 
+                px-4 
+                py-3 
+                rounded-lg 
+                transition-colors 
+                flex 
+                items-center 
+                ${selectedModuleId === 'quiz-module' 
+                  ? 'bg-primary text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                }
+              `}
+              onClick={() => onModuleSelect({
+                id: "quiz-module",
+                title: "Course Quiz",
+                course_id: modules[0]?.course_id || "quiz-course",
+                order: 999,
+                description: "Final assessment for the entire course",
+                type: "mixed"
+              })}
+            >
+              <ClipboardList className="h-4 w-4 mr-2 text-blue-500" />
+              <span>Course Quiz</span>
+            </button>
+          </li>
+        )}
       </ul>
     </div>
   );
