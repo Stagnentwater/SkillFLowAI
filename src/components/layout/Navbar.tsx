@@ -32,7 +32,7 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: 'Home', href: isAuthenticated ? '/home' : '/' },
+    { name: 'Home', href: isAuthenticated ? '/' : '/' },
     { name: 'Courses', href: '/home' },
     ...(isAuthenticated ? [{ name: 'Job Search', href: '/jobs' }] : []),
   ];
