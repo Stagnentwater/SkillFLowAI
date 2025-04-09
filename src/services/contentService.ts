@@ -54,10 +54,13 @@ const transformVisualContentToJson = (visualContent: VisualContent[] | string[])
 // Fetch module content by module ID
 export const fetchModuleContent = async (moduleId: string): Promise<ModuleContent | null> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const user_id = user?.id || null;
     const { data, error } = await supabase
       .from('module_content')
       .select('*')
       .eq('module_id', moduleId)
+      .eq('user_id', user_id)
       .single();
     
     if (error) {
@@ -88,7 +91,8 @@ export const createModuleContent = async (
   moduleId: string,
   content: string,
   textualContent: string,
-  visualContent: VisualContent[] | string[]
+  visualContent: VisualContent[] | string[],
+  userId:string
 ): Promise<ModuleContent | null> => {
   try {
     const contentId = uuidv4();
@@ -104,7 +108,8 @@ export const createModuleContent = async (
         module_id: moduleId,
         content,
         textual_content: textualContent,
-        visual_content: formattedVisualContent
+        visual_content: formattedVisualContent,
+        user_id: userId
       })
       .select()
       .single();
@@ -137,7 +142,8 @@ export const updateModuleContent = async (
   contentId: string,
   content: string,
   textualContent: string,
-  visualContent: VisualContent[]
+  visualContent: VisualContent[],
+  userId:string
 ): Promise<boolean> => {
   try {
     const { error } = await supabase
@@ -147,7 +153,8 @@ export const updateModuleContent = async (
         textual_content: textualContent,
         visual_content: transformVisualContentToJson(visualContent)
       })
-      .eq('id', contentId);
+      .eq('id', contentId)
+      .eq('user_id', userId);
     
     if (error) {
       console.error('Error updating module content:', error);
@@ -166,7 +173,8 @@ export const saveModuleContent = async (
   moduleId: string,
   content: string,
   textualContent: string,
-  visualContent: VisualContent[]
+  visualContent: VisualContent[],
+  userId: string | null = null
 ): Promise<boolean> => {
   try {
     // Check if content already exists for this module
@@ -178,7 +186,8 @@ export const saveModuleContent = async (
         existingContent.id,
         content,
         textualContent,
-        visualContent
+        visualContent,
+        userId
       );
     } else {
       // Create new content
@@ -186,7 +195,8 @@ export const saveModuleContent = async (
         moduleId,
         content,
         textualContent,
-        visualContent
+        visualContent,
+        userId
       );
       
       return !!newContent;
@@ -238,7 +248,8 @@ export const generateModuleContent = async (
       textualContent: generatedContent.textualContent || '',
       visualContent: generatedContent.visualContent || [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      user_id: (await supabase.auth.getUser()).data.user?.id || null
     };
     
     // Save the generated content to the database
@@ -246,7 +257,8 @@ export const generateModuleContent = async (
       moduleId,
       moduleContent.content,
       moduleContent.textualContent,
-      moduleContent.visualContent
+      moduleContent.visualContent,
+      moduleContent.user_id
     );
     
     return moduleContent;

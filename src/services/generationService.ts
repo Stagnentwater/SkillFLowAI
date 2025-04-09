@@ -4,6 +4,7 @@ import { Module, ModuleContent, Question } from '@/types';
 import { createModule } from './moduleService';
 import { createModuleContent } from './contentService';
 import { saveQuiz } from './quizService';
+import { supabase } from '@/integrations/supabase/client';
 
 // Generate module structure for a course
 export const generateModules = async (courseId: string, moduleTitles: string[]): Promise<Module[]> => {
@@ -33,8 +34,11 @@ export const generateModuleContent = async (
     const content = `Content for ${moduleTitle}: ${moduleTopic}`;
     const textualContent = `This is placeholder content for ${moduleTitle}. Real content would be added by course creators.`;
     const visualContent = [`https://placehold.co/600x400?text=${encodeURIComponent(moduleTitle)}`];
-    
-    return createModuleContent(moduleId, content, textualContent, visualContent);
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      throw new Error('Failed to retrieve user information');
+    }
+    return createModuleContent(moduleId, content, textualContent, visualContent, user.id);
   } catch (error) {
     console.error('Error generating module content:', error);
     return null;

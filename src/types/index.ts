@@ -48,6 +48,7 @@ export interface ModuleContent {
   textualContent?: string;
   createdAt?: string;
   updatedAt?: string;
+  user_id?: string;
 }
 
 export interface Quiz {
@@ -73,7 +74,7 @@ export interface UserCourseProgress {
   completedModules: string[];
   quizScores: Record<string, number>;
   lastAccessed: string;
-  personalizedContent?: Record<string, any>;
+  personalizedContent?: Record<string, string | number | boolean | object>;
 }
 
 // Define VisualContent interface

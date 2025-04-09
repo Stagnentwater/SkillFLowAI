@@ -65,7 +65,7 @@ export function useCourseContentGenerator(props?: UseCourseContentGeneratorProps
       }
       
       const generatedContent = await response.json();
-      
+      const userId=await supabase.auth.getUser().then(({ data})=> data.user?.id);
       // Step 3: Transform the edge function response into ModuleContent type
       const moduleContent: ModuleContent = {
         id: generatedContent.id || '',
@@ -74,7 +74,8 @@ export function useCourseContentGenerator(props?: UseCourseContentGeneratorProps
         textualContent: generatedContent.textualContent || '',
         visualContent: generatedContent.visualContent || [],
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        user_id:userId
       };
       
       setModuleContent(moduleContent);
