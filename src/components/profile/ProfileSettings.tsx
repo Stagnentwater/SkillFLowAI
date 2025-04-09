@@ -15,6 +15,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfileSettings = () => {
   const { user, logout } = useAuth();
@@ -61,10 +62,46 @@ const ProfileSettings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    
-    toast('This is a demo feature. Account deletion would happen here.');
-    await logout();
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+  
+      if (sessionError || !session?.user?.id) {
+        console.error("Session error:", sessionError);
+        return;
+      }
+  
+      const userId = session.user.id;
+  
+      const response = await fetch("http://127.0.0.1:54321/functions/v1/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id: userId }), // Make sure you're using "user_id"
+      });
+      
+      
+  
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to delete user.");
+      }
+  
+      toast.success("Account deleted successfully!");
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Auth deletion error:", error);
+      toast.error("Something went wrong while deleting your account.");
+    }
   };
+  
+  
+  
+  
 
   return (
     <div>
