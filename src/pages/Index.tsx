@@ -7,6 +7,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { ArrowRight, Sparkles, BarChart3, Zap, ChevronRight, Book, MessageSquare } from 'lucide-react';
 import { HoverCard } from '@radix-ui/react-hover-card';
+import Hero3D from '@/components/ui/Hero3D';
 
 const Index = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -47,7 +48,7 @@ const Index = () => {
       
       <main className="flex-grow">
         {/* Hero Section */}
-        <Hero />
+        <Hero3D />
         
         {/* Features Section */}
         <section id="features" className="py-24 bg-white dark:bg-gray-900">
