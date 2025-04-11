@@ -47,7 +47,7 @@ export function useCourseContentGenerator(props?: UseCourseContentGeneratorProps
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session.access_token}`
+          'Authorization': `Bearer ${sessionData.session.access_token},no-cors`
         }
       });
       
