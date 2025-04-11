@@ -1,9 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { Course, User } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 // Define the shape of our User context
 interface UserContextType {
@@ -55,6 +55,21 @@ const safelyConvertToNumbers = (values: any[]): number[] => {
     .filter((num): num is number => num !== null);
 };
 
+/**
+ * Helper function to convert array to string array
+ * Only converts string and number values, filtering out other types
+ */
+const convertToStringArray = (values: Json[]): string[] => {
+  return values
+    .filter((value): value is string | number | null => 
+      typeof value === 'string' || 
+      typeof value === 'number' || 
+      value === null
+    )
+    .filter((value): value is string | number => value !== null)
+    .map(value => String(value));
+};
+
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const [userCourses, setUserCourses] = useState<Course[]>([]);
@@ -95,7 +110,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(`Error fetching enrolled courses: ${progressError.message}`);
       }
 
-      let enrolledCourseIds: string[] = progress?.map(entry => entry.course_id) || [];
+      let enrolledCourseIds: string[] = progress?.map(entry => String(entry.course_id)) || [];
 
       // As a fallback, try to fetch from Learner_Profile if we have no results
       if (enrolledCourseIds.length === 0) {
@@ -108,14 +123,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
           if (learnerProfile && learnerProfile.Courses_Enrolled) {
             // Process the courses enrolled from the learner profile
-            // Filter to only include valid string or number values
             const rawEnrolledCourses = learnerProfile.Courses_Enrolled;
             if (Array.isArray(rawEnrolledCourses)) {
-              enrolledCourseIds = rawEnrolledCourses
-                .filter(id => 
-                  (typeof id === 'string' && id.trim() !== '') || 
-                  (typeof id === 'number'))
-                .map(id => String(id));
+              // Safely convert the JSON array to string array, filtering out non-string/number values
+              enrolledCourseIds = convertToStringArray(rawEnrolledCourses as Json[]);
             }
           }
         } catch (profileError) {

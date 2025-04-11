@@ -1,13 +1,11 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import Hero from '@/components/ui/Hero';
+import Hero3D from '@/components/ui/Hero3D';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { ArrowRight, Sparkles, BarChart3, Zap, ChevronRight, Book, MessageSquare } from 'lucide-react';
 import { HoverCard } from '@radix-ui/react-hover-card';
-import Hero3D from '@/components/ui/Hero3D';
 
 const Index = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -47,7 +45,7 @@ const Index = () => {
       <Navbar />
       
       <main className="flex-grow">
-        {/* Hero Section */}
+        {/* Hero Section - Using our new 3D Hero */}
         <Hero3D />
         
         {/* Features Section */}

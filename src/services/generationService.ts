@@ -1,10 +1,9 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { Module, ModuleContent, Question } from '@/types';
+import { Module, ModuleContent, Question, VisualContent } from '@/types';
 import { createModule } from './moduleService';
 import { createModuleContent } from './contentService';
 import { saveQuiz } from './quizService';
-import { supabase } from '@/integrations/supabase/client';
 
 // Generate module structure for a course
 export const generateModules = async (courseId: string, moduleTitles: string[]): Promise<Module[]> => {
@@ -33,12 +32,18 @@ export const generateModuleContent = async (
     // Create simple placeholder content
     const content = `Content for ${moduleTitle}: ${moduleTopic}`;
     const textualContent = `This is placeholder content for ${moduleTitle}. Real content would be added by course creators.`;
-    const visualContent = [`https://placehold.co/600x400?text=${encodeURIComponent(moduleTitle)}`];
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) {
-      throw new Error('Failed to retrieve user information');
-    }
-    return createModuleContent(moduleId, content, textualContent, visualContent, user.id);
+    
+    // Create proper VisualContent array
+    const visualContent: VisualContent[] = [
+      {
+        type: 'url',
+        url: `https://placehold.co/600x400?text=${encodeURIComponent(moduleTitle)}`,
+        title: `${moduleTitle} Placeholder`,
+        description: 'Placeholder image for this module'
+      }
+    ];
+    
+    return createModuleContent(moduleId, content, textualContent, visualContent);
   } catch (error) {
     console.error('Error generating module content:', error);
     return null;

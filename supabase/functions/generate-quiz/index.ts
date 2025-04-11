@@ -80,9 +80,12 @@ serve(async (req) => {
       
       // Validate the structure of each question
       const validatedQuestions = jsonData.map((item, index) => {
+        // Create a UUID for each question
+        const id = crypto.randomUUID();
+        
         // Ensure we have all required fields or provide defaults
         return {
-          id: crypto.randomUUID(), // Generate a UUID for each question
+          id: id,
           text: item.question || `Question ${index + 1}`,
           options: Array.isArray(item.options) && item.options.length === 4 
             ? item.options 

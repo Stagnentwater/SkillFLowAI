@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
+import anime from 'animejs';
 
 interface ModuleQuizProps {
   quiz: Quiz;
@@ -31,6 +32,28 @@ const ModuleQuiz = ({
 }: ModuleQuizProps) => {
   // Calculate progress percentage for the quiz
   const progressPercentage = Object.keys(selectedAnswers).length / quiz.questions.length * 100;
+  
+  // Trigger animations when component mounts
+  useEffect(() => {
+    // Animate the header
+    anime({
+      targets: '.quiz-title',
+      translateY: [20, 0],
+      opacity: [0, 1],
+      easing: 'easeOutExpo',
+      duration: 800
+    });
+    
+    // Animate the questions with a staggered delay
+    anime({
+      targets: '.question-card',
+      translateY: [20, 0],
+      opacity: [0, 1],
+      easing: 'easeOutExpo',
+      duration: 800,
+      delay: anime.stagger(150)
+    });
+  }, []);
   
   // Trigger confetti when quiz is submitted and score is good
   useEffect(() => {
@@ -59,13 +82,33 @@ const ModuleQuiz = ({
           requestAnimationFrame(frame);
         }
       }());
+      
+      // Animate the result content
+      anime({
+        targets: '.result-content',
+        scale: [0.9, 1],
+        opacity: [0, 1],
+        easing: 'easeOutElastic(1, .8)',
+        duration: 1200
+      });
     }
   }, [submitted, score, totalQuestions]);
+  
+  // Animate option selection
+  const animateSelection = (element: HTMLElement) => {
+    anime({
+      targets: element,
+      scale: [1, 1.02, 1],
+      backgroundColor: ['rgba(var(--primary), 0.1)', 'rgba(var(--primary), 0.2)', 'rgba(var(--primary), 0.1)'],
+      easing: 'easeInOutQuad',
+      duration: 300
+    });
+  };
   
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">Module Quiz</h2>
+        <h2 className="text-2xl font-bold quiz-title opacity-0">Course Quiz</h2>
         {!submitted && (
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-500">
@@ -82,7 +125,7 @@ const ModuleQuiz = ({
           <p className="text-gray-500">Loading quiz questions...</p>
         </div>
       ) : submitted ? (
-        <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+        <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg result-content opacity-0">
           <div className="flex flex-col items-center justify-center py-6">
             <div className={`rounded-full p-3 mb-4 ${score >= (totalQuestions * 0.8) ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'}`}>
               {score >= (totalQuestions * 0.8) ? (
@@ -108,7 +151,7 @@ const ModuleQuiz = ({
       ) : (
         <div className="space-y-8">
           {quiz.questions.map((question: Question, index: number) => (
-            <div key={question.id} className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+            <div key={question.id} className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg question-card opacity-0">
               <h3 className="text-lg font-medium mb-4">
                 {index + 1}. {question.text}
               </h3>
@@ -132,7 +175,10 @@ const ModuleQuiz = ({
                         ? 'border-primary bg-primary/10'
                         : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
-                    onClick={() => onAnswerSelect(question.id, option)}
+                    onClick={() => {
+                      onAnswerSelect(question.id, option);
+                      animateSelection(document.activeElement as HTMLElement);
+                    }}
                   >
                     {option}
                   </div>
@@ -146,9 +192,18 @@ const ModuleQuiz = ({
       {!loading && !submitted && (
         <div className="mt-8 flex justify-end">
           <Button
-            onClick={onSubmit}
+            onClick={() => {
+              // Animate button press
+              anime({
+                targets: '.submit-button',
+                scale: [1, 0.95, 1],
+                duration: 300,
+                easing: 'easeInOutQuad'
+              });
+              onSubmit();
+            }}
             disabled={Object.keys(selectedAnswers).length !== quiz.questions.length}
-            className="px-6"
+            className="px-6 submit-button"
           >
             Submit Quiz
           </Button>

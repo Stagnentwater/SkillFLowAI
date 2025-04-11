@@ -2,6 +2,7 @@
 import React from 'react';
 import { Module } from '@/types';
 import { Book, LockIcon, ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ModuleSidebarProps {
   modules: Module[];
@@ -9,6 +10,7 @@ interface ModuleSidebarProps {
   onModuleSelect: (module: Module) => void;
   completedModules?: string[];
   unlockedModules?: string[];
+  courseId?: string;
 }
 
 const ModuleSidebar = ({
@@ -17,13 +19,10 @@ const ModuleSidebar = ({
   onModuleSelect,
   completedModules = [],
   unlockedModules = [],
-}: {
-  modules: Module[];
-  selectedModuleId: string | null;
-  onModuleSelect: (module: Module) => void;
-  completedModules?: string[];
-  unlockedModules?: string[];
-}) => {
+  courseId,
+}: ModuleSidebarProps) => {
+  const navigate = useNavigate();
+
   // If no modules, show a placeholder
   if (modules.length === 0) {
     return (
@@ -35,8 +34,18 @@ const ModuleSidebar = ({
     );
   }
 
-  // Only show the quiz option if there are modules (we need them for the quiz content)
-  const showQuizOption = modules.length > 0;
+  // Always show the quiz option
+  const showQuizOption = true;
+
+  // Handle course quiz selection
+  const handleCourseQuizClick = () => {
+    if (courseId) {
+      console.log("Navigating to course quiz:", `/course/${courseId}/quiz`);
+      navigate(`/course/${courseId}/quiz`);
+    } else {
+      console.error("Cannot navigate to quiz: courseId is undefined");
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
@@ -90,9 +99,9 @@ const ModuleSidebar = ({
           );
         })}
 
-        {/* Add Course Quiz at the end (only if we have modules) */}
-        {showQuizOption && (
-          <li key="quiz-module">
+        {/* Add Course Quiz at the end */}
+        {showQuizOption && courseId && (
+          <li key="course-quiz">
             <button
               className={`
                 w-full 
@@ -103,19 +112,11 @@ const ModuleSidebar = ({
                 transition-colors 
                 flex 
                 items-center 
-                ${selectedModuleId === 'quiz-module' 
-                  ? 'bg-primary text-white' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                }
+                hover:bg-gray-100 dark:hover:bg-gray-700
+                bg-blue-50 dark:bg-blue-900/20
+                border border-blue-200 dark:border-blue-800
               `}
-              onClick={() => onModuleSelect({
-                id: "quiz-module",
-                title: "Course Quiz",
-                course_id: modules[0]?.course_id || "quiz-course",
-                order: 999,
-                description: "Final assessment for the entire course",
-                type: "mixed"
-              })}
+              onClick={handleCourseQuizClick}
             >
               <ClipboardList className="h-4 w-4 mr-2 text-blue-500" />
               <span>Course Quiz</span>

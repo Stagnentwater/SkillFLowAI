@@ -30,54 +30,118 @@ export function useCourseContentGenerator(props?: UseCourseContentGeneratorProps
         return existingContent;
       }
       
-      // Step 2: Content doesn't exist, generate it using edge function
+      // Step 2: Content doesn't exist, generate it using direct API call
       toast.info(`Generating content for module: ${module.title}`);
       
-      // Get auth token for edge function call
-      const { data: sessionData } = await supabase.auth.getSession();
+      // Direct call to Gemini API
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCmcMnSWDJqm_OA_9MiyVYxrXhg9iAcXT8'; // Fallback to the key in .env
+      const apiUrl = import.meta.env.VITE_GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
       
-      if (!sessionData.session) {
-        throw new Error('Authentication required to generate content');
-      }
-      
-      // Call the edge function directly
-      const functionUrl = `https://ncmrsccaleuhlthxkpxq.supabase.co/functions/v1/generate-course-content?moduleId=${module.id}`;
-      
-      const response = await fetch(functionUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session.access_token},no-cors`
+      const prompt = `
+        Generate educational content for a module titled "${module.title}" in a learning management system.
+        
+        Please provide:
+        1. A comprehensive overview of the topic (1-2 paragraphs)
+        2. Key concepts to understand (3-5 bullet points)
+        3. A simple diagram or visual representation that could help explain the concept
+        
+        Format the response as JSON with these fields:
+        {
+          "content": "Brief overview of the content",
+          "textualContent": "Detailed markdown formatted content with headers, paragraphs, and bullet points",
+          "visualContent": [
+            {
+              "type": "mermaid",
+              "diagram": "mermaid diagram code here",
+              "title": "Diagram title",
+              "description": "Brief description of the diagram"
+            }
+          ]
         }
+      `;
+      
+      const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 2048,
+          }
+        })
       });
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error from generate-course-content function:', errorText);
-        
-        // If the API key is expired, generate fallback content instead
-        if (errorText.includes('API key expired') || errorText.includes('API_KEY_INVALID')) {
-          console.log('Using fallback content generation due to API key issue');
-          return generateFallbackContent(module);
-        }
-        
+        console.error('Error from Gemini API:', errorText);
         throw new Error(`Failed to generate content: ${response.status} ${response.statusText}`);
       }
       
-      const generatedContent = await response.json();
-      const userId=await supabase.auth.getUser().then(({ data})=> data.user?.id);
-      // Step 3: Transform the edge function response into ModuleContent type
+      const apiResponse = await response.json();
+      
+      // Extract the generated content from the Gemini response
+      let generatedContent;
+      try {
+        const responseText = apiResponse.candidates[0].content.parts[0].text;
+        // Try to parse JSON from the response text
+        const jsonStartIdx = responseText.indexOf('{');
+        const jsonEndIdx = responseText.lastIndexOf('}') + 1;
+        if (jsonStartIdx >= 0 && jsonEndIdx > jsonStartIdx) {
+          const jsonStr = responseText.substring(jsonStartIdx, jsonEndIdx);
+          generatedContent = JSON.parse(jsonStr);
+        } else {
+          // If no JSON found, create a basic structure
+          generatedContent = {
+            content: responseText.substring(0, 200) + "...",
+            textualContent: responseText,
+            visualContent: []
+          };
+        }
+      } catch (parseError) {
+        console.error('Error parsing Gemini response:', parseError);
+        generatedContent = {
+          content: "Content generation error",
+          textualContent: "Failed to parse the generated content.",
+          visualContent: []
+        };
+      }
+      
+      // Step 3: Save the generated content to the database
       const moduleContent: ModuleContent = {
-        id: generatedContent.id || '',
+        id: crypto.randomUUID(),
         moduleId: module.id,
         content: generatedContent.content || '',
         textualContent: generatedContent.textualContent || '',
         visualContent: generatedContent.visualContent || [],
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        user_id:userId
+        updatedAt: new Date().toISOString()
       };
       
+      // Save to database
+      const savedContent = await saveModuleContent(
+        module.id,
+        moduleContent.content,
+        moduleContent.textualContent,
+        moduleContent.visualContent
+      );
+      
+      if (savedContent) {
+        setModuleContent(savedContent);
+        onContentLoaded?.(savedContent);
+        return savedContent;
+      }
+      
+      // If database save failed, still return the generated content
       setModuleContent(moduleContent);
       onContentLoaded?.(moduleContent);
       return moduleContent;
@@ -100,50 +164,49 @@ export function useCourseContentGenerator(props?: UseCourseContentGeneratorProps
       const fallbackContent: ModuleContent = {
         id: crypto.randomUUID(),
         moduleId: module.id,
-        content: `This is placeholder content for the module "${module.title}". The content generation service is currently experiencing issues.`,
+        content: `This is placeholder content for the module "${module.title}".`,
         textualContent: `
           ## ${module.title}
           
           This module would typically contain AI-generated content, but there was an issue with the content generation service.
           
-          ### Common reasons for this issue:
-          - The API key for the AI service might have expired
-          - There might be connectivity issues with the AI service
-          - The AI service might be temporarily unavailable
+          ### Key Concepts
+          - Basic understanding of ${module.title}
+          - Application of ${module.title} in real-world scenarios
+          - Best practices for implementing ${module.title}
           
-          Please try again later or contact the administrator.
+          ### Learning Objectives
+          By the end of this module, you should be able to understand the fundamentals of ${module.title} and apply them in practice.
         `,
         visualContent: [
           {
             type: 'mermaid',
-            diagram: 'graph TD;\n  A[Start] --> B[Content];\n  B --> C[Learning];\n  C --> D[End];',
-            title: 'Learning Flow',
-            description: 'A simple diagram showing the learning flow for this module'
+            diagram: 'graph TD;\n  A[Start] --> B[Learn];\n  B --> C[Practice];\n  C --> D[Master];\n  D --> E[End];',
+            title: 'Learning Process',
+            description: 'A simple diagram showing the learning process for this module'
           }
         ],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
-      // Save the fallback content to the database
-      const savedContent = await saveModuleContent(
-        module.id,
-        fallbackContent.content,
-        fallbackContent.textualContent,
-        fallbackContent.visualContent
-      );
-      
-      if (savedContent) {
-        toast.success('Fallback content created successfully');
+      // Try to save the fallback content to the database
+      try {
+        const savedContent = await saveModuleContent(
+          module.id,
+          fallbackContent.content,
+          fallbackContent.textualContent,
+          fallbackContent.visualContent
+        );
         
-        // Fetch the saved content to get the proper ID and timestamps
-        const dbContent = await fetchModuleContent(module.id);
-        
-        if (dbContent) {
-          setModuleContent(dbContent);
-          onContentLoaded?.(dbContent);
-          return dbContent;
+        if (savedContent) {
+          setModuleContent(savedContent);
+          onContentLoaded?.(savedContent);
+          return savedContent;
         }
+      } catch (saveError) {
+        console.error('Error saving fallback content:', saveError);
+        // Continue with the unsaved fallback content
       }
       
       // If saving failed, at least return the fallback content for display

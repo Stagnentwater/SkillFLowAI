@@ -216,21 +216,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          module_id: string
+          course_id: string
           questions: Json | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
-          module_id: string
+          course_id: string
           questions?: Json | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
-          module_id?: string
+          course_id?: string
           questions?: Json | null
           updated_at?: string
         }

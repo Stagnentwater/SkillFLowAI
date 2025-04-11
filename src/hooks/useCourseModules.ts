@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Module, ModuleContent, Quiz, Question } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -47,6 +48,8 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const courseQuizId = `course-quiz-${courseId}`;
+
   const getModules = async () => {
     setLoading(true);
     setError(null);
@@ -70,8 +73,7 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
     setGeneratingContent(true);
     
     try {
-      // Special handling for the quiz module
-      if (module.id === 'quiz-module') {
+      if (module.id === 'course-quiz') {
         console.log('Quiz module selected, generating course quiz');
         setGeneratingQuiz(true);
         await handleQuizModuleSelect();
@@ -80,9 +82,6 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       
       const content = await fetchModuleContent(module.id);
       setModuleContent(content);
-      
-      const quizData = await fetchQuiz(module.id);
-      setQuiz(quizData);
       
       setSelectedAnswers({});
     } catch (err) {
@@ -97,8 +96,7 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
     try {
       setGeneratingQuiz(true);
       
-      // First check if we already have a quiz for this "quiz-module"
-      const existingQuiz = await fetchQuiz('quiz-module');
+      const existingQuiz = await fetchQuiz(courseQuizId);
       
       if (existingQuiz && existingQuiz.questions.length > 0) {
         console.log('Found existing course quiz:', existingQuiz);
@@ -109,16 +107,17 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
         return;
       }
       
-      // If no existing quiz, generate a new one with AI
+      const title = courseTitle || 'Course';
+      const description = courseDescription || 'No description';
+      
       console.log('Generating new course quiz with AI');
       toast.info('Generating course quiz with AI, please wait...');
       
-      // Generate quiz using the Gemini API
       const questions = await generateQuizWithAI(
         courseId,
         modules,
-        courseTitle || 'Course',
-        courseDescription || 'No description'
+        title,
+        description
       );
       
       if (!questions || questions.length === 0) {
@@ -127,17 +126,15 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       
       console.log('Successfully generated course quiz with AI:', questions);
       
-      // Save the quiz to the database
-      const quizSaved = await saveQuiz('quiz-module', questions);
+      const quizSaved = await saveQuiz(courseQuizId, questions);
       
       if (!quizSaved) {
         throw new Error('Failed to save generated quiz');
       }
       
-      // Create a Quiz object
       const newQuiz: Quiz = {
         id: uuidv4(),
-        moduleId: 'quiz-module',
+        moduleId: courseQuizId,
         questions: questions,
         updatedAt: new Date().toISOString()
       };
@@ -151,7 +148,6 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       setError('Failed to generate course quiz');
       toast.error('Failed to generate quiz. Using placeholder questions instead.');
       
-      // Create simple placeholder questions if generation fails
       const placeholderQuestions: Question[] = Array.from({ length: 10 }, (_, i) => ({
         id: uuidv4(),
         text: `Question ${i + 1} about ${courseTitle || 'this course'}?`,
@@ -167,7 +163,7 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       
       const placeholderQuiz: Quiz = {
         id: uuidv4(),
-        moduleId: 'quiz-module',
+        moduleId: courseQuizId,
         questions: placeholderQuestions,
         updatedAt: new Date().toISOString()
       };
@@ -191,50 +187,50 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       if (existingQuiz && existingQuiz.questions.length > 0) {
         console.log('Found existing quiz:', existingQuiz);
         setQuiz(existingQuiz);
-        setSelectedAnswers({}); // Reset selected answers
+        setSelectedAnswers({});
         return existingQuiz;
       }
       
-      console.log('Generating new quiz for module:', moduleId);
+      console.log('Generating new quiz for course:', moduleId);
       
-      const totalQuestions = 10;
-      let visualQuestions = Math.round(totalQuestions * options.visualRatio);
-      let textualQuestions = totalQuestions - visualQuestions;
-      
-      if (visualQuestions === 0) visualQuestions = 1;
-      if (textualQuestions === 0) textualQuestions = 1;
-      
-      if (visualQuestions + textualQuestions > 10) {
-        textualQuestions = 10 - visualQuestions;
+      try {
+        const questions = await generateQuizWithAI(
+          courseId,
+          modules,
+          courseTitle || 'Course',
+          courseDescription || 'No description'
+        );
+        
+        if (questions && questions.length > 0) {
+          const quizSaved = await saveQuiz(moduleId, questions);
+          
+          if (!quizSaved) {
+            throw new Error('Failed to save generated quiz');
+          }
+          
+          const newQuiz = await fetchQuiz(moduleId);
+          
+          if (newQuiz) {
+            console.log('Successfully generated quiz with AI:', newQuiz);
+            setQuiz(newQuiz);
+            setSelectedAnswers({});
+            return newQuiz;
+          }
+        }
+      } catch (aiError) {
+        console.error('Error generating quiz with AI:', aiError);
+        // Fall back to simple generation below
       }
       
-      const moduleTitle = options.moduleTitle;
-      const moduleDescription = options.moduleContent?.content || '';
-      const textualContent = options.moduleContent?.textualContent || '';
-      
+      const totalQuestions = 10;
       const questions: Question[] = [];
       
-      const visualTemplates = [
-        `Based on the diagram, what is the main concept illustrated in ${moduleTitle}?`,
-        `What does the visual representation in ${moduleTitle} demonstrate?`,
-        `According to the diagram in ${moduleTitle}, which component is central to the process?`,
-        `What relationship is shown in the visual representation of ${moduleTitle}?`,
-        `Which element in the diagram is directly connected to the main concept?`
-      ];
+      const moduleTitle = options.moduleTitle;
       
-      const textualTemplates = [
-        `What is the main topic of ${moduleTitle}?`,
-        `What are the key concepts covered in ${moduleTitle}?`,
-        `According to ${moduleTitle}, which of the following is true?`,
-        `What is the primary objective of learning about ${moduleTitle}?`,
-        `Which skill is most directly related to ${moduleTitle}?`
-      ];
-      
-      for (let i = 0; i < visualQuestions; i++) {
-        const template = visualTemplates[i % visualTemplates.length];
+      for (let i = 0; i < totalQuestions; i++) {
         questions.push({
           id: uuidv4(),
-          text: template,
+          text: `Question ${i + 1} about ${moduleTitle}?`,
           options: [
             `Option A for ${moduleTitle}`,
             `Option B for ${moduleTitle}`,
@@ -242,29 +238,9 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
             `Option D for ${moduleTitle}`
           ],
           correctAnswer: `Option A for ${moduleTitle}`,
-          type: 'visual',
-          imageUrl: options.moduleContent?.visualContent?.[0]?.url || 
-                   "https://placehold.co/600x400/3b82f6/ffffff.jpg?text=Question+Diagram"
-        });
-      }
-      
-      for (let i = 0; i < textualQuestions; i++) {
-        const template = textualTemplates[i % textualTemplates.length];
-        questions.push({
-          id: uuidv4(),
-          text: template,
-          options: [
-            `Option A for ${moduleTitle}`,
-            `Option B for ${moduleTitle}`,
-            `Option C for ${moduleTitle}`,
-            `Option D for ${moduleTitle}`
-          ],
-          correctAnswer: `Option B for ${moduleTitle}`,
           type: 'textual'
         });
       }
-      
-      console.log('Generated questions:', questions);
       
       const quizSaved = await saveQuiz(moduleId, questions);
       
@@ -275,9 +251,9 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       const newQuiz = await fetchQuiz(moduleId);
       
       if (newQuiz) {
-        console.log('Successfully generated and saved quiz:', newQuiz);
+        console.log('Successfully generated simple quiz:', newQuiz);
         setQuiz(newQuiz);
-        setSelectedAnswers({}); // Reset selected answers
+        setSelectedAnswers({});
         return newQuiz;
       } else {
         throw new Error('Failed to retrieve generated quiz');

@@ -1,3 +1,4 @@
+
 import { Course } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
@@ -24,6 +25,15 @@ const safelyConvertToNumbers = (values: any[]): number[] => {
       return null;
     })
     .filter((num): num is number => num !== null);
+};
+
+/**
+ * Helper function to safely convert a string to a number
+ * Returns the parsed number or null if invalid
+ */
+const safelyConvertToNumber = (value: string): number | null => {
+  const parsed = Number(value);
+  return !isNaN(parsed) ? parsed : null;
 };
 
 const getStoredData = <T>(key: string, defaultValue: T): T => {
@@ -170,9 +180,9 @@ export const enrollInCourse = async (userId: string, courseId: string): Promise<
     console.log(`Attempting to enroll user ${userId} in course ${courseId}`);
     
     // Parse courseId to number for database query
-    const numericCourseId = parseInt(courseId);
+    const numericCourseId = safelyConvertToNumber(courseId);
     
-    if (isNaN(numericCourseId)) {
+    if (numericCourseId === null) {
       console.error('Invalid course ID - must be a number', courseId);
       toast.error('Invalid course ID');
       return false;
@@ -183,7 +193,7 @@ export const enrollInCourse = async (userId: string, courseId: string): Promise<
       .from('user_course_progress')
       .select('*')
       .eq('user_id', userId)
-      .eq('course_id', courseId)
+      .eq('course_id', numericCourseId)
       .maybeSingle();
     
     if (checkError) {
@@ -203,7 +213,7 @@ export const enrollInCourse = async (userId: string, courseId: string): Promise<
       .from('user_course_progress')
       .insert({
         user_id: userId,
-        course_id: courseId, // Use the string ID directly
+        course_id: numericCourseId, // Use the numeric ID
         last_accessed: new Date().toISOString(),
         completed_module_ids: [],
         quiz_scores: {}
@@ -344,11 +354,20 @@ export const updateModuleProgress = async (
   completed: boolean
 ): Promise<boolean> => {
   try {
+    // Convert courseId to number for database query
+    const numericCourseId = safelyConvertToNumber(courseId);
+    
+    if (numericCourseId === null) {
+      console.error('Invalid course ID - must be a number', courseId);
+      toast.error('Invalid course ID');
+      return false;
+    }
+    
     const { data: progressData, error: getError } = await supabase
       .from('user_course_progress')
       .select('completed_module_ids')
       .eq('user_id', userId)
-      .eq('course_id', courseId)
+      .eq('course_id', numericCourseId)
       .maybeSingle();
     
     if (getError) {
@@ -371,7 +390,7 @@ export const updateModuleProgress = async (
         last_accessed: new Date().toISOString()
       })
       .eq('user_id', userId)
-      .eq('course_id', courseId);
+      .eq('course_id', numericCourseId);
     
     if (updateError) {
       console.error('Error updating module progress:', updateError);
@@ -394,11 +413,20 @@ export const updateQuizScore = async (
   textualScore: number
 ): Promise<boolean> => {
   try {
+    // Convert courseId to number for database query
+    const numericCourseId = safelyConvertToNumber(courseId);
+    
+    if (numericCourseId === null) {
+      console.error('Invalid course ID - must be a number', courseId);
+      toast.error('Invalid course ID');
+      return false;
+    }
+    
     const { data: progressData, error: getError } = await supabase
       .from('user_course_progress')
       .select('quiz_scores')
       .eq('user_id', userId)
-      .eq('course_id', courseId)
+      .eq('course_id', numericCourseId)
       .maybeSingle();
     
     if (getError) {
@@ -416,7 +444,7 @@ export const updateQuizScore = async (
         last_accessed: new Date().toISOString()
       })
       .eq('user_id', userId)
-      .eq('course_id', courseId);
+      .eq('course_id', numericCourseId);
     
     if (updateError) {
       console.error('Error updating quiz score:', updateError);
