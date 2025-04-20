@@ -16,6 +16,7 @@ const ProfileAnalytics = () => {
     { name: 'React', value: 60 },
     { name: 'TypeScript', value: 45 },
     { name: 'CSS', value: 80 },
+    { name: 'HTML', value: 90 },
   ];
   
   const learningData = [

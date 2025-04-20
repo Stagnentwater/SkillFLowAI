@@ -180,6 +180,8 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_admin: boolean | null
+          is_banned: boolean | null
           last_course_visited_id: string | null
           skills: Json | null
           textual_points: number | null
@@ -192,6 +194,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          is_admin?: boolean | null
+          is_banned?: boolean | null
           last_course_visited_id?: string | null
           skills?: Json | null
           textual_points?: number | null
@@ -204,6 +208,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_admin?: boolean | null
+          is_banned?: boolean | null
           last_course_visited_id?: string | null
           skills?: Json | null
           textual_points?: number | null
@@ -214,35 +220,27 @@ export type Database = {
       }
       quizzes: {
         Row: {
+          course_id: string | null
           created_at: string
           id: string
-          course_id: string
           questions: Json | null
           updated_at: string
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
           id?: string
-          course_id: string
           questions?: Json | null
           updated_at?: string
         }
         Update: {
+          course_id?: string | null
           created_at?: string
           id?: string
-          course_id?: string
           questions?: Json | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_quizzes_module"
-            columns: ["module_id"]
-            isOneToOne: false
-            referencedRelation: "modules"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_course_progress: {
         Row: {
@@ -288,7 +286,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_profile_admin_status: {
+        Args: { user_id: string; admin_status: boolean }
+        Returns: undefined
+      }
+      update_profile_ban_status: {
+        Args: { user_id: string; ban_status: boolean }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

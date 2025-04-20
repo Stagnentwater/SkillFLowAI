@@ -134,6 +134,7 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       
       const newQuiz: Quiz = {
         id: uuidv4(),
+        courseId: courseQuizId,
         moduleId: courseQuizId,
         questions: questions,
         updatedAt: new Date().toISOString()
@@ -163,6 +164,7 @@ export const useCourseModules = (props: UseCourseModulesProps) => {
       
       const placeholderQuiz: Quiz = {
         id: uuidv4(),
+        courseId: courseQuizId,
         moduleId: courseQuizId,
         questions: placeholderQuestions,
         updatedAt: new Date().toISOString()

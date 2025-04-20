@@ -12,8 +12,10 @@ import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import JobSearch from './pages/JobSearch';
 import Index from './pages/Index';
+import Admin from './pages/Admin';
 import { useAuth } from './context/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { useAdmin } from './context/AdminContext';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -25,6 +27,26 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
+// Admin route component
+const AdminRoute = ({ children }: { children: JSX.Element }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { isAdminMode } = useAdmin();
+  
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!isAdminMode) {
+    return <Navigate to="/profile" replace />;
   }
 
   return children;
@@ -66,6 +88,10 @@ export const router = createBrowserRouter([
   {
     path: '/profile',
     element: <ProtectedRoute><Profile /></ProtectedRoute>,
+  },
+  {
+    path: '/admin',
+    element: <AdminRoute><Admin /></AdminRoute>,
   },
   {
     path: '/onboarding',

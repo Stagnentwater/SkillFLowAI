@@ -9,6 +9,7 @@ import { UserProvider } from "@/context/UserContext";
 import { ThemeProvider } from "next-themes";
 import { router } from "./router";
 import { ChatbotProvider } from "@/context/ChatbotContext";
+import { AdminProvider } from "@/context/AdminContext";
 import Chatbot from "@/components/ui/Chatbot";
 
 const queryClient = new QueryClient();
@@ -18,14 +19,16 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <AuthProvider>
         <UserProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <ChatbotProvider>
-              <RouterProvider router={router} />
-              <Chatbot />
-            </ChatbotProvider>
-          </TooltipProvider>
+          <AdminProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <ChatbotProvider>
+                <RouterProvider router={router} />
+                <Chatbot />
+              </ChatbotProvider>
+            </TooltipProvider>
+          </AdminProvider>
         </UserProvider>
       </AuthProvider>
     </ThemeProvider>

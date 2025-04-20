@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
+import { useAdmin } from '@/context/AdminContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,18 +9,23 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Check, Loader2, Save, Trash, User, X } from 'lucide-react';
+import { Check, Loader2, Save, Trash, User, X, Shield, ShieldOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileSettings = () => {
   const { user, logout } = useAuth();
   const { updateUserProfile, loading } = useUser();
+  const { isAdminMode, activateAdminMode, deactivateAdminMode } = useAdmin();
   const [skills, setSkills] = useState<string[]>(user?.skills || []);
   const [newSkill, setNewSkill] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const navigate = useNavigate();
 
   const profileSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters long" }),
@@ -61,9 +66,21 @@ const ProfileSettings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    
     toast('This is a demo feature. Account deletion would happen here.');
     await logout();
+  };
+
+  const handleAdminLogin = () => {
+    const success = activateAdminMode(adminPassword);
+    if (success) {
+      setShowAdminDialog(false);
+      navigate('/admin');
+    }
+  };
+
+  const handleAdminLogout = () => {
+    deactivateAdminMode();
+    toast.info('Exited admin mode');
   };
 
   return (
@@ -71,9 +88,10 @@ const ProfileSettings = () => {
       <h2 className="text-2xl font-bold mb-6">Account Settings</h2>
       
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Profile Information</TabsTrigger>
           <TabsTrigger value="account">Account Management</TabsTrigger>
+          <TabsTrigger value="admin">Admin Access</TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile" className="pt-4">
@@ -208,6 +226,101 @@ const ProfileSettings = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="admin" className="pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Access</CardTitle>
+              <CardDescription>
+                Admin options for system management
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {isAdminMode ? (
+                <div>
+                  <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-md border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-5 w-5 text-amber-500" />
+                      <h3 className="font-medium text-amber-700 dark:text-amber-400">Admin Mode Active</h3>
+                    </div>
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      You currently have administrator privileges. Use them responsibly.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3">
+                    <Button 
+                      onClick={() => navigate('/admin')}
+                      className="w-full"
+                    >
+                      <Shield className="mr-2 h-4 w-4" />
+                      Go to Admin Dashboard
+                    </Button>
+                    
+                    <Button 
+                      onClick={handleAdminLogout}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <ShieldOff className="mr-2 h-4 w-4" />
+                      Exit Admin Mode
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Admin access is restricted to authorized personnel only. If you are an administrator,
+                    enter your admin password below to access administrative features.
+                  </p>
+                  
+                  <Button 
+                    onClick={() => setShowAdminDialog(true)}
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    <Shield className="mr-2 h-4 w-4" />
+                    Request Admin Access
+                  </Button>
+                  
+                  <AlertDialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Admin Authentication</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Enter the admin password to gain administrative access.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="py-4">
+                        <Label htmlFor="admin-password">Admin Password</Label>
+                        <Input 
+                          id="admin-password"
+                          type="password" 
+                          value={adminPassword}
+                          onChange={(e) => setAdminPassword(e.target.value)}
+                          className="mt-2"
+                          placeholder="Enter admin password"
+                          autoComplete="off"
+                        />
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => {
+                          setAdminPassword('');
+                          setShowAdminDialog(false);
+                        }}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleAdminLogin}>
+                          Authenticate
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

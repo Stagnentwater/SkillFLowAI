@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import Hero3D from '@/components/ui/Hero3D';
 import Hero from '@/components/ui/Hero';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -47,7 +46,7 @@ const Index = () => {
       
       <main className="flex-grow">
         {/* Hero Section - Using our new 3D Hero */}
-        <Hero/>
+        <Hero />
         
         {/* Features Section */}
         <section id="features" className="py-24 bg-white dark:bg-gray-900">

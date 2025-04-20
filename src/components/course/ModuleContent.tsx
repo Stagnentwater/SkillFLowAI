@@ -1,8 +1,10 @@
+
 import React from 'react';
 import Markdown from 'react-markdown';
 import { Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { VisualContentViewer } from '@/components/VisualContentViewer';
+import TextToSpeechButton from './TextToSpeechButton';
 
 import { ModuleContent as ModuleContentType } from '@/types';
 
@@ -11,18 +13,21 @@ const ModuleContent = ({
   content,
   visualPoints,
   textualPoints,
-  // Remove onTakeQuiz prop from component signature
 }: {
   title: string;
   content: ModuleContentType | null;
   visualPoints: number;
   textualPoints: number;
-  // Remove onTakeQuiz?: () => void;
 }) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">{title}</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">{title}</h2>
+        {content?.textualContent && (
+          <TextToSpeechButton text={content.textualContent} />
+        )}
+      </div>
       
       {/* Learning Style Banner */}
       <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-6">
@@ -85,9 +90,6 @@ const ModuleContent = ({
               </div>
             </div>
           </div>
-          
-          {/* Remove the "Take Quiz" button */}
-          {/* The quiz button section has been removed */}
         </div>
       ) : (
         <div className="text-center py-12">

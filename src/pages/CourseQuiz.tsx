@@ -179,8 +179,9 @@ const CourseQuiz = () => {
     setPassed(isPassed);
 
     try {
-      // Update quiz score in database
-      await updateQuizScore(user.id, courseId, quiz.id || 'course-quiz', score);
+      // Fixed: Update quiz score with appropriate parameters
+      const quizId = quiz.id || 'course-quiz';
+      await updateQuizScore(user.id, courseId, quizId, score, null, null);
 
       // If user passed, update skills
       if (isPassed && course?.skillsOffered?.length > 0) {

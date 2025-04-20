@@ -8,6 +8,8 @@ export interface User {
   textualPoints: number;
   createdAt: string;
   updatedAt: string;
+  isAdmin?: boolean; // Added for admin functionality
+  isBanned?: boolean; // Added for ban functionality
 }
 
 export interface Course {
@@ -52,7 +54,8 @@ export interface ModuleContent {
 
 export interface Quiz {
   id: string;
-  courseId: string;
+  courseId: string; // Main identifier for the course relationship
+  moduleId?: string; // Optional reference to a specific module
   questions: Question[];
   createdAt?: string;
   updatedAt?: string;
@@ -83,4 +86,10 @@ export interface VisualContent {
   url?: string;
   title?: string;
   description?: string;
+}
+
+// Added types for admin functionality
+export interface AdminState {
+  isAdminMode: boolean;
+  adminPassword: string;
 }
