@@ -105,11 +105,12 @@ export const fetchModuleContent = async (moduleId: string): Promise<ModuleConten
     
     // Use the helper function to get a valid content ID
     const contentId = getContentIdForModule(moduleId);
-    
+    console.log((await getCurrentUserId()).valueOf());
     const { data, error } = await supabase
       .from('module_content')
       .select('*')
       .eq('module_id', contentId)
+      .eq('user_id', (await getCurrentUserId()).valueOf()) // Ensure we only fetch content for the current user
       .maybeSingle(); // Use maybeSingle to prevent errors if no record exists
     
     if (error) {
@@ -238,6 +239,7 @@ export const updateModuleContent = async (
         updated_at: new Date().toISOString()
       })
       .eq('id', existingData.id)
+      .eq('user_id', userId) // Ensure we only update content for the current user
       .select('*')
       .single();
     
@@ -282,6 +284,7 @@ export const saveModuleContent = async (
       .from('module_content')
       .select('id')
       .eq('module_id', contentId)
+      .eq('user_id', (await getCurrentUserId()).valueOf()) // Ensure we only check content for the current user
       .maybeSingle();
     
     if (fetchError) {
