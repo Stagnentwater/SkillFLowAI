@@ -69,6 +69,7 @@ const CourseAdminTable: React.FC<CourseAdminTableProps> = ({ courses, onRefresh 
               </TableRow>
             ) : (
               courses.map((course) => (
+                //table adds key to each row
                 <TableRow key={course.id}>
                   <TableCell className="font-medium">{course.title}</TableCell>
                   <TableCell>
