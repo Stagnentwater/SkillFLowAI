@@ -34,7 +34,7 @@ const Navbar = () => {
   const navLinks = [
     { name: 'Home', href: isAuthenticated ? '/home' : '/' },
     { name: 'Courses', href: '/home' },
-    ...(isAuthenticated ? [{ name: 'Job Search', href: '/jobs' }] : []),
+    ...(isAuthenticated ? [{ name: 'Job Search', href: '/jobs' },{ name: 'Leaderboard', href: '/leaderboard' }] : []),
   ];
 
   return (
