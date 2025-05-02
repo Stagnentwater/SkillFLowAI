@@ -12,6 +12,7 @@ import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import JobSearch from './pages/JobSearch';
 import Index from './pages/Index';
+import LeaderBoard from './pages/LeaderBoard';
 import Admin from './pages/Admin';
 import { useAuth } from './context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -106,6 +107,10 @@ export const router = createBrowserRouter([
   {
     path: '/jobs',
     element: <JobSearch />,
+  },
+  {
+    path:'/Leaderboard',
+    element: <LeaderBoard/>
   },
   {
     path: '/FAQ',
