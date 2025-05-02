@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, ChevronDown, LogOut, User, BookOpen, BarChart, Briefcase } from 'lucide-react';
+import { Menu, X, ChevronDown, LogOut, User, BookOpen, BarChart, Briefcase, Info, HelpCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +33,8 @@ const Navbar = () => {
   const navLinks = [
     { name: 'Home', href: isAuthenticated ? '/home' : '/' },
     { name: 'Courses', href: '/home' },
+    { name: 'About Us', href: '/about' },
+    { name: 'FAQ', href: '/faq' }, // Added FAQ link
     ...(isAuthenticated ? [{ name: 'Job Search', href: '/jobs' }] : []),
   ];
 
@@ -90,6 +91,14 @@ const Navbar = () => {
                 <DropdownMenuItem onClick={() => navigate('/jobs')}>
                   <Briefcase className="mr-2 h-4 w-4" />
                   <span>Job Search</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/about')}>
+                  <Info className="mr-2 h-4 w-4" />
+                  <span>About Us</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/faq')}>
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>FAQ</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>

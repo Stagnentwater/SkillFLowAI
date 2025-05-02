@@ -16,6 +16,8 @@ import Admin from './pages/Admin';
 import { useAuth } from './context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useAdmin } from './context/AdminContext';
+import AboutUs from './pages/Aboutus';
+import FAQ from './pages/FAQ';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -53,6 +55,10 @@ const AdminRoute = ({ children }: { children: JSX.Element }) => {
 };
 
 export const router = createBrowserRouter([
+  {
+    path:'/about',
+    element: <AboutUs/>
+  },
   {
     path: '/',
     element: <Index />,
@@ -100,6 +106,10 @@ export const router = createBrowserRouter([
   {
     path: '/jobs',
     element: <JobSearch />,
+  },
+  {
+    path: '/FAQ',
+    element: <FAQ/>
   },
   {
     path: '*',
