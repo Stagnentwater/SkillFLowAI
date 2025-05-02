@@ -35,7 +35,7 @@ const Navbar = () => {
     { name: 'Courses', href: '/home' },
     { name: 'About Us', href: '/about' },
     { name: 'FAQ', href: '/faq' }, // Added FAQ link
-    ...(isAuthenticated ? [{ name: 'Job Search', href: '/jobs' },{ name: 'Leaderboard', href: '/leaderboard' }] : []),
+    ...(isAuthenticated ? [{ name: 'Job Search', href: '/jobs' },{ name: 'Leaderboard', href: '/leaderboard' }] : []),//added leaderboard
     
   ];
 
