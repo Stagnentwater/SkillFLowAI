@@ -17,7 +17,7 @@ import Admin from './pages/Admin';
 import { useAuth } from './context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useAdmin } from './context/AdminContext';
-import AboutUs from './pages/Aboutus';
+import AboutUs from './pages/AboutUs';
 import FAQ from './pages/FAQ';
 
 // Protected route component
