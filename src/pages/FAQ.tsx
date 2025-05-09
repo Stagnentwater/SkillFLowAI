@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-
+import Header from '../components/layout/Navbar'
 interface FAQItem {
   id: number;
   question: string;
@@ -86,6 +86,8 @@ const FAQ: React.FC = () => {
   const categories = Object.keys(groupedFAQs);
 
   return (
+    <>
+    <Header/>
     <div className="bg-background min-h-screen pt-24 pb-16">
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
@@ -144,6 +146,7 @@ const FAQ: React.FC = () => {
         </div>
       </div>
     </div>
+  </>
   );
 };
 
