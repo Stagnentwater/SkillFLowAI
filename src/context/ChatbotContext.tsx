@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = "AIzaSyDHR3o8vZ6fOFmd2rvrL7Ari490oKFWx-k";
+const API_KEY = "AIzaSyCmcMnSWDJqm_OA_9MiyVYxrXhg9iAcXT8";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 const ChatbotContext = createContext(null);
@@ -10,11 +10,11 @@ export const ChatbotProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
 
   const sendMessage = async (userMessage) => {
-    setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
+    setMessages((prev) => [...prev, { role: "user", text: userMessage}]);
 
     try {
       const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-pro-002",
+  model: "gemini-2.0-flash",
   systemInstruction: "Respond concisely. Keep answers within 2-3 sentences. Focus on key points."
 });
 
