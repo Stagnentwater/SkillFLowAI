@@ -15,7 +15,7 @@ export const ChatbotProvider = ({ children }) => {
     try {
       const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
-  systemInstruction: "Respond concisely. Keep answers within 2-3 sentences. Focus on key points."
+  systemInstruction: "Respond concisely. Keep answers within 2-3 sentences. Focus on key points."//false commit
 });
 
 
