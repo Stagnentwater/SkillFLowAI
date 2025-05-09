@@ -66,7 +66,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-For inquiries or support, please contact us at [support@skillflowai.com](mailto:support@skillflowai.com).
+For inquiries or support, please contact us at [support@skillflowai.com](mailto:ayn250605@gmail.com).
 
 ---
 
