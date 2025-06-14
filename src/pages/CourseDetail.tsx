@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,7 @@ import ModuleContent from '@/components/course/ModuleContent';
 import EmptyModuleState from '@/components/course/EmptyModuleState';
 import CourseModules from '@/components/course/CourseModules';
 import { fetchCourseById } from '@/services/courseService';
+import { supabase } from '@/integrations/supabase/client';
 
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -163,6 +163,50 @@ const CourseDetail = () => {
       setError('Failed to load module content. Please try again.');
     }
   };
+
+  const [userPoints, setUserPoints] = useState({
+    visualPoints: 0,
+    textualPoints: 0
+  });
+
+  // Fetch user's latest points from the database
+  useEffect(() => {
+    const fetchUserPoints = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('visual_points, textual_points')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user points:', error);
+          return;
+        }
+        
+        if (data) {
+          setUserPoints({
+            visualPoints: data.visual_points || 0,
+            textualPoints: data.textual_points || 0
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch user points:', err);
+      }
+    };
+    
+    fetchUserPoints();
+  }, [user?.id]);
+
+  // This handler will be called when points are updated in the ModuleContent component
+  const handlePointsUpdated = (type: 'visual' | 'textual', points: number) => {
+    setUserPoints(prev => ({
+      ...prev,
+      [type === 'visual' ? 'visualPoints' : 'textualPoints']: points
+    }));
+  };
   
   if (loading) {
     return (
@@ -271,8 +315,9 @@ const CourseDetail = () => {
                       <ModuleContent 
                         title={selectedModule?.title || ''}
                         content={moduleContent}
-                        visualPoints={user?.visualPoints || 0}
-                        textualPoints={user?.textualPoints || 0}
+                        visualPoints={userPoints.visualPoints}
+                        textualPoints={userPoints.textualPoints}
+                        onPointsUpdated={handlePointsUpdated}
                       />
                     ) : (
                       <EmptyModuleState 
