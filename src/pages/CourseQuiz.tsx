@@ -79,22 +79,22 @@ const CourseQuiz = () => {
               );
 
               if (questions && questions.length > 0) {
-                console.log("Successfully generated quiz questions:", questions);
-
+                // Show generated questions immediately
+                setQuiz({
+                  id: quizId,
+                  courseId: courseId,
+                  questions: questions,
+                  updatedAt: new Date().toISOString(),
+                });
                 // Save the generated quiz to the database
                 const saveSuccess = await saveQuiz(quizId, questions);
-
                 if (saveSuccess) {
                   // Fetch the newly saved quiz
                   const newQuiz = await fetchQuiz(quizId);
-                  if (newQuiz) {
+                  if (newQuiz && newQuiz.questions && newQuiz.questions.length > 0) {
                     setQuiz(newQuiz);
                     toast.success("Quiz generated successfully!");
-                  } else {
-                    setError("Failed to retrieve the generated quiz");
                   }
-                } else {
-                  setError("Failed to save the generated quiz");
                 }
               } else {
                 setError("Failed to generate quiz questions");
@@ -230,7 +230,7 @@ const CourseQuiz = () => {
     </div>
   );
 
-  if (loading) {
+  if (loading || generatingQuiz) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -289,9 +289,7 @@ const CourseQuiz = () => {
                   Return to Course
                 </Button>
               </div>
-            ) : generatingQuiz ? (
-              renderGeneratingState()
-            ) : quiz ? (
+            ) : quiz && Array.isArray(quiz.questions) && quiz.questions.length > 0 ? (
               <ModuleQuiz 
                 quiz={quiz}
                 selectedAnswers={selectedAnswers}
