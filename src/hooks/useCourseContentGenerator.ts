@@ -35,7 +35,7 @@ export function useCourseContentGenerator(props?: UseCourseContentGeneratorProps
       
       // Direct call to Gemini API
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCmcMnSWDJqm_OA_9MiyVYxrXhg9iAcXT8'; // Fallback to the key in .env
-      const apiUrl = import.meta.env.VITE_GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+      const apiUrl = import.meta.env.VITE_GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
       
       const prompt = `
         Generate educational content for a module titled "${module.title}" in a learning management system.
