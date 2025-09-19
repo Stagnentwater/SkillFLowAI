@@ -33,16 +33,21 @@ const AboutUs: React.FC = () => {
     },
     {
       id: 4,
-      name: "G.Akanksha",
+      name: "Ruhi Parveen",
       role: "Team Member",
       image: "/api/placeholder/400/400",
     },
     {
       id: 5,
-      name: "P.Akhila",
+      name: "Divyansh Tonk",
       role: "Team Member",
       image: "/api/placeholder/400/400",
-    },
+    },{
+      id: 5,
+      name: "C. Chethana",
+      role: "Team Member",
+      image: "/api/placeholder/400/400",
+    }
   ];
 
   return (

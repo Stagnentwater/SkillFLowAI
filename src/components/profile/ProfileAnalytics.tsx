@@ -99,18 +99,18 @@ const ProfileAnalytics = () => {
         const daysToFetch = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90;
         
         const { data: activityData } = await supabase
-          .from('user_activity')
-          .select('timestamp, duration_minutes')
+          .from('user_course_progress')
+          .select('last_viewed_at, time_spent')
           .eq('user_id', user.id)
-          .gte('timestamp', subDays(new Date(), daysToFetch).toISOString())
-          .order('timestamp', { ascending: true });
+          .gte('last_viewed_at', subDays(new Date(), daysToFetch).toISOString())
+          .order('last_viewed_at', { ascending: true });
         
         // Group activity by day
         const activityByDay = new Map();
         activityData?.forEach(activity => {
-          const day = format(parseISO(activity.timestamp), dateFormat);
+          const day = format(parseISO(activity.last_viewed_at), dateFormat);
           const currentHours = activityByDay.get(day) || 0;
-          activityByDay.set(day, currentHours + (activity.duration_minutes || 0) / 60);
+          activityByDay.set(day, currentHours + (activity.time_spent || 0) / 60);
         });
         
         // Fill in missing days with zeros
@@ -128,11 +128,11 @@ const ProfileAnalytics = () => {
         const totalHours = learningData.reduce((sum, day) => sum + day.hours, 0);
         const previousPeriodHours = activityData
           ?.filter(a => {
-            const activityDate = parseISO(a.timestamp);
+            const activityDate = parseISO(a.last_viewed_at);
             const cutoffDate = subDays(new Date(), daysToFetch * 2);
             return activityDate >= cutoffDate && activityDate < subDays(new Date(), daysToFetch);
           })
-          .reduce((sum, a) => sum + ((a.duration_minutes || 0) / 60), 0) || 0;
+          .reduce((sum, a) => sum + ((a.time_spent || 0) / 60), 0) || 0;
           
         const weeklyChange = previousPeriodHours > 0 
           ? ((totalHours - previousPeriodHours) / previousPeriodHours) * 100 
