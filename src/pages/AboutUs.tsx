@@ -16,37 +16,37 @@ const AboutUs: React.FC = () => {
     {
       id: 1,
       name: "Ayushman Yash Nayak",
-      role: "Team Member",
+      role: "Backend Developer",
       image: "/Ayushman.jpg",
     },
     {
       id: 2,
       name: "Prajwal Upadhyay",
-      role: "Team Member",
+      role: "Frontend Developer",
       image: "/prajwal.jpg",
     },
     {
       id: 3,
       name: "T.Divyasree",
-      role: "Team Member",
-      image: "/api/placeholder/400/400",
+      role: "Frontend Developer",
+      image: "/divyashree.jpg",
     },
     {
       id: 4,
       name: "Ruhi Parveen",
-      role: "Team Member",
-      image: "/api/placeholder/400/400",
-    },
-    {
-      id: 5,
-      name: "Divyansh Tonk",
-      role: "Team Member",
-      image: "/api/placeholder/400/400",
+      role: "Frontend Developer",
+      image: "/ruhi.jpg",
     },{
       id: 5,
       name: "C. Chethana",
-      role: "Team Member",
-      image: "/api/placeholder/400/400",
+      role: "Frontend Developer",
+      image: "/chethana.jpg",
+    },
+    {
+      id: 6,  
+      name: "Divyansh Tonk",
+      role: "Backend Developer",
+      image: "/divyansh.jpg",
     }
   ];
 
