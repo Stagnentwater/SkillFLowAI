@@ -41,9 +41,10 @@ export function useCourseContentGenerator(props?: UseCourseContentGeneratorProps
         Generate educational content for a module titled "${module.title}" in a learning management system.
         
         Please provide:
-        1. A comprehensive overview of the topic (1-2 paragraphs)
-        2. Key concepts to understand (3-5 bullet points)
-        3. A simple diagram or visual representation that could help explain the concept
+        1. A comprehensive overview of the topic (10-20 paragraphs)
+        2. Key concepts to understand (10-20 bullet points)
+        3. An Example to understand the oncept using badminton explain like you are explaining to a kid
+        4. A simple diagram or visual representation that could help explain the concept
         
         Format the response as JSON with these fields:
         {

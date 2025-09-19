@@ -85,6 +85,10 @@ const Navbar = () => {
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>My Courses</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/career-to-course')}>
+                  <BarChart className="mr-2 h-4 w-4" />
+                  <span>Course to Career</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/create-course')}>
                   <BarChart className="mr-2 h-4 w-4" />
                   <span>Create Course</span>
