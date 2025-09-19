@@ -75,7 +75,9 @@ export const createCourse = async (
         enrolled_count: 0,
         creator_id: creatorId,
         creator_name: creatorName,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        
+
       })
       .select()
       .single();
