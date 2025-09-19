@@ -87,66 +87,73 @@ const FAQ: React.FC = () => {
 
   return (
     <>
-    <Header/>
-    <div className="bg-background min-h-screen pt-24 pb-16">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          Frequently Asked Questions
-        </h1>
-        
-        <p className="text-foreground/80 text-lg max-w-3xl mx-auto text-center mb-12">
-          Find answers to common questions about SkillFlowAI's platform, courses, and features. 
-          If you can't find what you're looking for, feel free to contact our support team.
-        </p>
+      <Header />
+      <div className="bg-gradient-to-br from-gray-900 via-blue-950 to-gray-900 min-h-screen pt-24 pb-16">
+        <div className="container mx-auto px-4">
+          {/* Hero Section */}
+          <section className="text-center mb-12 animate-fade-in">
+            <h1 className="text-5xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent animate-slide-in-down">
+              Frequently Asked Questions
+            </h1>
+            <p className="text-foreground/80 text-lg max-w-3xl mx-auto mb-8 animate-fade-in delay-150">
+              Find answers to common questions about SkillFlowAI's platform, courses, and features. If you can't find what you're looking for, feel free to contact our support team.
+            </p>
+            <div className="flex justify-center mb-8">
+              <span className="inline-block w-32 h-1 rounded-full bg-gradient-to-r from-primary to-purple-600 animate-fade-in" />
+            </div>
+          </section>
 
-        <div className="max-w-3xl mx-auto">
-          {categories.map((category) => (
-            <div key={category} className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4 text-primary">{category}</h2>
-              <div className="space-y-4">
-                {groupedFAQs[category].map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="border border-border rounded-lg overflow-hidden shadow-sm"
-                  >
-                    <button
-                      className="w-full text-left p-4 flex justify-between items-center bg-card hover:bg-card/80 transition-colors"
-                      onClick={() => toggleExpand(item.id)}
-                      aria-expanded={expandedIds.includes(item.id)}
+          {/* FAQ Section */}
+          <div className="max-w-3xl mx-auto animate-slide-in-up">
+            {categories.map((category, catIdx) => (
+              <div key={category} className="mb-10 animate-fade-in" style={{ animationDelay: `${catIdx * 100}ms` }}>
+                <h2 className="text-2xl font-semibold mb-4 text-primary animate-slide-in-down">{category}</h2>
+                <div className="space-y-4">
+                  {groupedFAQs[category].map((item, idx) => (
+                    <div 
+                      key={item.id} 
+                      className="border border-border rounded-lg overflow-hidden shadow-sm bg-card/80 animate-pop-up"
+                      style={{ animationDelay: `${idx * 80}ms` }}
                     >
-                      <span className="font-medium text-foreground">{item.question}</span>
-                      {expandedIds.includes(item.id) ? (
-                        <ChevronUp className="h-5 w-5 text-primary shrink-0" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-primary shrink-0" />
-                      )}
-                    </button>
-                    
-                    {expandedIds.includes(item.id) && (
-                      <div className="p-4 pt-0 border-t border-border bg-card/50">
+                      <button
+                        className="w-full text-left p-4 flex justify-between items-center bg-card hover:bg-card/80 transition-colors"
+                        onClick={() => toggleExpand(item.id)}
+                        aria-expanded={expandedIds.includes(item.id)}
+                      >
+                        <span className="font-medium text-foreground">{item.question}</span>
+                        {expandedIds.includes(item.id) ? (
+                          <ChevronUp className="h-5 w-5 text-primary shrink-0 transition-transform duration-300 rotate-180" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-primary shrink-0 transition-transform duration-300" />
+                        )}
+                      </button>
+                      <div
+                        className={`transition-all duration-500 ease-in-out overflow-hidden bg-card/50 border-t border-border ${expandedIds.includes(item.id) ? 'max-h-40 opacity-100 p-4 pt-0' : 'max-h-0 opacity-0 p-0'}`}
+                        style={{ pointerEvents: expandedIds.includes(item.id) ? 'auto' : 'none' }}
+                      >
                         <p className="text-foreground/80">{item.answer}</p>
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <div className="mt-16 text-center">
-          <h3 className="text-xl font-medium mb-4 text-foreground">Still have questions?</h3>
-          <p className="text-foreground/80 mb-6">We're here to help! Reach out to our support team.</p>
-          <a 
-            href="/contact" 
-            className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
-          >
-            Contact Support
-          </a>
+          {/* Contact Support CTA */}
+          <div className="mt-20 text-center animate-fade-in">
+            <h3 className="text-xl font-medium mb-4 text-foreground">Still have questions?</h3>
+            <p className="text-foreground/80 mb-6">We're here to help! Reach out to our support team.</p>
+            <a 
+              href="/contact" 
+              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-full text-white bg-gradient-to-r from-primary to-purple-600 shadow-lg hover:scale-105 hover:shadow-primary/30 transition-all duration-300 animate-pop-up"
+            >
+              Contact Support
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-  </>
+    </>
   );
 };
 

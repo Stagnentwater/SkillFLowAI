@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Medal, Trophy, Award, Loader2, Crown, Users } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const WaterEffect = ({ children, rank }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -21,7 +22,7 @@ const WaterEffect = ({ children, rank }) => {
 
   return (
     <div 
-      className="relative overflow-hidden rounded-lg p-1 group"
+      className="relative overflow-hidden rounded-lg p-1 group animate-pop-up"
       onMouseEnter={() => setIsAnimating(true)}
       onMouseLeave={() => setIsAnimating(false)}
     >
@@ -31,7 +32,6 @@ const WaterEffect = ({ children, rank }) => {
         after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.3),transparent_70%)]
         ${isAnimating ? 'animate-water-flow' : ''}`}
       />
-      
       {/* Content container */}
       <div className="relative bg-white dark:bg-gray-800 rounded-md p-4 transition-all duration-300 ease-in-out">
         {children}
@@ -52,16 +52,11 @@ const LeaderboardPage = () => {
   const fetchLeaderboardData = async () => {
     try {
       setLoading(true);
-      
-      // Query to get users sorted by skills array length
       const { data, error } = await supabase
         .from('Learner_Profile')
         .select('id, Name, Email, avatar, Skills, created_at')
         .order('created_at', { ascending: timeframe === 'newest' });
-      
       if (error) throw error;
-
-      // Process data to calculate skill count and rank users
       const processedData = data
         .map(user => ({
           ...user,
@@ -72,7 +67,6 @@ const LeaderboardPage = () => {
           ...user,
           rank: index + 1
         }));
-
       setLeaderboardData(processedData);
     } catch (error) {
       console.error('Error fetching leaderboard data:', error);
@@ -84,13 +78,13 @@ const LeaderboardPage = () => {
   const getRankBadge = (rank) => {
     switch (rank) {
       case 1:
-        return <Crown className="h-7 w-7 text-yellow-500" />;
+        return <Crown className="h-7 w-7 text-yellow-500 animate-pop-up" />;
       case 2:
-        return <Medal className="h-6 w-6 text-gray-400" />;
+        return <Medal className="h-6 w-6 text-gray-400 animate-pop-up delay-100" />;
       case 3:
-        return <Medal className="h-6 w-6 text-amber-700" />;
+        return <Medal className="h-6 w-6 text-amber-700 animate-pop-up delay-200" />;
       default:
-        return <span className="text-gray-500 font-medium">{rank}</span>;
+        return <span className="text-gray-500 font-medium animate-fade-in delay-300">{rank}</span>;
     }
   };
 
@@ -100,28 +94,39 @@ const LeaderboardPage = () => {
   const remainingUsers = leaderboardData.slice(3);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+    <motion.div
+      className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950"
+      initial={{ opacity: 0, y: 32 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+    >
       <Navbar />
-      
       <main className="flex-grow pt-24">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-                Leaderboard <Trophy className="h-8 w-8 text-yellow-500" />
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                See who's mastering the most skills and leading the way
-              </p>
+          {/* Hero Section */}
+          <motion.section
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <h1 className="text-5xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-yellow-400 to-primary bg-clip-text text-transparent flex items-center justify-center gap-3">
+              Leaderboard <Trophy className="h-10 w-10 text-yellow-500 animate-pop-up" />
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+              See who's mastering the most skills and leading the way
+            </p>
+            <div className="flex justify-center mb-8">
+              <span className="inline-block w-32 h-1 rounded-full bg-gradient-to-r from-yellow-400 to-primary" />
             </div>
-            <Tabs defaultValue="allTime" onValueChange={setTimeframe} className="w-auto">
+            <Tabs defaultValue="allTime" onValueChange={setTimeframe} className="w-auto mx-auto">
               <TabsList>
                 <TabsTrigger value="allTime">All Time</TabsTrigger>
                 <TabsTrigger value="newest">Newest</TabsTrigger>
               </TabsList>
             </Tabs>
-          </div>
-          
+          </motion.section>
+
           {loading ? (
             <div className="flex justify-center items-center py-24">
               <div className="text-center">
@@ -132,111 +137,142 @@ const LeaderboardPage = () => {
           ) : leaderboardData.length > 0 ? (
             <>
               {/* Top 3 Podium */}
-              <div className="mb-16">
+              <motion.div
+                className="mb-16"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
                 <h2 className="text-2xl font-bold mb-8 text-center">Top Achievers</h2>
                 <div className="flex flex-col md:flex-row justify-center items-end gap-4 md:gap-8 h-64">
                   {/* Second Place */}
                   {topUsers[1] && (
-                    <div className="w-full md:w-1/4 h-4/5">
+                    <motion.div
+                      className="w-full md:w-1/4 h-4/5"
+                      initial={{ opacity: 0, y: 32 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.3 }}
+                      whileHover={{ scale: 1.04 }}
+                    >
                       <WaterEffect rank={2}>
-                        <div className="flex flex-col items-center">
+                        <motion.div className="flex flex-col items-center" whileHover={{ scale: 1.06 }}>
                           <div className="text-center mb-2">
-                            <Medal className="h-8 w-8 text-gray-400 mx-auto" />
+                            <Medal className="h-8 w-8 text-gray-400 mx-auto animate-pop-up" />
                             <span className="text-xl font-bold">2nd Place</span>
                           </div>
-                          <Avatar className="h-16 w-16 border-2 border-gray-400 mb-2">
-                            {topUsers[1].avatar ? (
-                              <img 
-                                src={topUsers[1].avatar} 
-                                alt={topUsers[1].Name} 
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="bg-primary h-full w-full flex items-center justify-center text-white text-xl font-medium">
-                                {topUsers[1].Name?.charAt(0) || topUsers[1].Email?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </Avatar>
-                          <h3 className="font-bold text-lg truncate w-full text-center">{topUsers[1].Name || 'Anonymous'}</h3>
-                          <div className="flex items-center mt-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
+                          <motion.div whileHover={{ scale: 1.13 }} transition={{ type: 'spring', stiffness: 300 }}>
+                            <Avatar className="h-16 w-16 border-2 border-gray-400 mb-2 transition-transform duration-300 animate-pop-up">
+                              {topUsers[1].avatar ? (
+                                <img 
+                                  src={topUsers[1].avatar} 
+                                  alt={topUsers[1].Name} 
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="bg-primary h-full w-full flex items-center justify-center text-white text-xl font-medium">
+                                  {topUsers[1].Name?.charAt(0) || topUsers[1].Email?.charAt(0) || '?'}
+                                </div>
+                              )}
+                            </Avatar>
+                          </motion.div>
+                          <h3 className="font-bold text-lg truncate w-full text-center animate-fade-in delay-100">{topUsers[1].Name || 'Anonymous'}</h3>
+                          <motion.div className="flex items-center mt-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full animate-fade-in delay-200" whileHover={{ scale: 1.08 }}>
                             <span className="font-bold mr-1">{topUsers[1].skillCount}</span>
                             <Award className="h-4 w-4 text-gray-400" />
-                          </div>
-                        </div>
+                          </motion.div>
+                        </motion.div>
                       </WaterEffect>
-                    </div>
+                    </motion.div>
                   )}
-                  
                   {/* First Place */}
                   {topUsers[0] && (
-                    <div className="w-full md:w-1/3 h-full">
+                    <motion.div
+                      className="w-full md:w-1/3 h-full"
+                      initial={{ opacity: 0, y: 32 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.1 }}
+                      whileHover={{ scale: 1.07 }}
+                    >
                       <WaterEffect rank={1}>
-                        <div className="flex flex-col items-center">
+                        <motion.div className="flex flex-col items-center" whileHover={{ scale: 1.09 }}>
                           <div className="text-center mb-3">
-                            <Crown className="h-10 w-10 text-yellow-500 mx-auto" />
+                            <Crown className="h-10 w-10 text-yellow-500 mx-auto animate-pop-up" />
                             <span className="text-2xl font-bold">1st Place</span>
                           </div>
-                          <Avatar className="h-20 w-20 border-4 border-yellow-500 mb-3">
-                            {topUsers[0].avatar ? (
-                              <img 
-                                src={topUsers[0].avatar} 
-                                alt={topUsers[0].Name} 
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="bg-primary h-full w-full flex items-center justify-center text-white text-2xl font-medium">
-                                {topUsers[0].Name?.charAt(0) || topUsers[0].Email?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </Avatar>
-                          <h3 className="font-bold text-xl truncate w-full text-center">{topUsers[0].Name || 'Anonymous'}</h3>
-                          <div className="flex items-center mt-3 bg-yellow-100 dark:bg-yellow-900 px-4 py-2 rounded-full">
+                          <motion.div whileHover={{ scale: 1.18 }} transition={{ type: 'spring', stiffness: 300 }}>
+                            <Avatar className="h-20 w-20 border-4 border-yellow-500 mb-3 transition-transform duration-300 animate-pop-up">
+                              {topUsers[0].avatar ? (
+                                <img 
+                                  src={topUsers[0].avatar} 
+                                  alt={topUsers[0].Name} 
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="bg-primary h-full w-full flex items-center justify-center text-white text-2xl font-medium">
+                                  {topUsers[0].Name?.charAt(0) || topUsers[0].Email?.charAt(0) || '?'}
+                                </div>
+                              )}
+                            </Avatar>
+                          </motion.div>
+                          <h3 className="font-bold text-xl truncate w-full text-center animate-fade-in delay-100">{topUsers[0].Name || 'Anonymous'}</h3>
+                          <motion.div className="flex items-center mt-3 bg-yellow-100 dark:bg-yellow-900 px-4 py-2 rounded-full animate-fade-in delay-200" whileHover={{ scale: 1.12 }}>
                             <span className="font-bold text-lg mr-1">{topUsers[0].skillCount}</span>
                             <Award className="h-5 w-5 text-yellow-500" />
-                          </div>
-                        </div>
+                          </motion.div>
+                        </motion.div>
                       </WaterEffect>
-                    </div>
+                    </motion.div>
                   )}
-                  
                   {/* Third Place */}
                   {topUsers[2] && (
-                    <div className="w-full md:w-1/4 h-3/4">
+                    <motion.div
+                      className="w-full md:w-1/4 h-3/4"
+                      initial={{ opacity: 0, y: 32 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.4 }}
+                      whileHover={{ scale: 1.04 }}
+                    >
                       <WaterEffect rank={3}>
-                        <div className="flex flex-col items-center">
+                        <motion.div className="flex flex-col items-center" whileHover={{ scale: 1.06 }}>
                           <div className="text-center mb-2">
-                            <Medal className="h-7 w-7 text-amber-700 mx-auto" />
+                            <Medal className="h-7 w-7 text-amber-700 mx-auto animate-pop-up" />
                             <span className="text-lg font-bold">3rd Place</span>
                           </div>
-                          <Avatar className="h-14 w-14 border-2 border-amber-700 mb-2">
-                            {topUsers[2].avatar ? (
-                              <img 
-                                src={topUsers[2].avatar} 
-                                alt={topUsers[2].Name} 
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="bg-primary h-full w-full flex items-center justify-center text-white text-lg font-medium">
-                                {topUsers[2].Name?.charAt(0) || topUsers[2].Email?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </Avatar>
-                          <h3 className="font-bold truncate w-full text-center">{topUsers[2].Name || 'Anonymous'}</h3>
-                          <div className="flex items-center mt-2 bg-amber-100 dark:bg-amber-900 px-3 py-1 rounded-full">
+                          <motion.div whileHover={{ scale: 1.13 }} transition={{ type: 'spring', stiffness: 300 }}>
+                            <Avatar className="h-14 w-14 border-2 border-amber-700 mb-2 transition-transform duration-300 animate-pop-up">
+                              {topUsers[2].avatar ? (
+                                <img 
+                                  src={topUsers[2].avatar} 
+                                  alt={topUsers[2].Name} 
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="bg-primary h-full w-full flex items-center justify-center text-white text-lg font-medium">
+                                  {topUsers[2].Name?.charAt(0) || topUsers[2].Email?.charAt(0) || '?'}
+                                </div>
+                              )}
+                            </Avatar>
+                          </motion.div>
+                          <h3 className="font-bold truncate w-full text-center animate-fade-in delay-100">{topUsers[2].Name || 'Anonymous'}</h3>
+                          <motion.div className="flex items-center mt-2 bg-amber-100 dark:bg-amber-900 px-3 py-1 rounded-full animate-fade-in delay-200" whileHover={{ scale: 1.08 }}>
                             <span className="font-bold mr-1">{topUsers[2].skillCount}</span>
                             <Award className="h-4 w-4 text-amber-700" />
-                          </div>
-                        </div>
+                          </motion.div>
+                        </motion.div>
                       </WaterEffect>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
-              </div>
-              
+              </motion.div>
               {/* Leaderboard Table */}
-              <Card className="shadow-lg">
+              <motion.div
+                className="shadow-lg animate-fade-in"
+                initial={{ opacity: 0, y: 32 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
                 <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
+                  <CardTitle className="text-2xl flex items-center gap-2 animate-slide-in-down">
                     <Users className="h-6 w-6" /> 
                     All Learners
                   </CardTitle>
@@ -248,75 +284,56 @@ const LeaderboardPage = () => {
                       <div className="col-span-7">User</div>
                       <div className="col-span-4 text-right">Skills</div>
                     </div>
-                    
-                    {leaderboardData.map((user) => (
-                      <div 
-                        key={user.id} 
-                        className={`grid grid-cols-12 gap-4 items-center py-3 px-2 rounded-lg transition-colors ${
-                          user.rank <= 3 ? 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900' : ''
-                        }`}
-                      >
-                        <div className="col-span-1 text-center">
-                          {getRankBadge(user.rank)}
-                        </div>
-                        <div className="col-span-7 flex items-center gap-3">
-                          <Avatar className={`h-10 w-10 border ${
-                            user.rank === 1 ? 'border-yellow-500' : 
-                            user.rank === 2 ? 'border-gray-400' : 
-                            user.rank === 3 ? 'border-amber-700' : 'border-gray-200 dark:border-gray-700'
-                          }`}>
-                            {user.avatar ? (
-                              <img 
-                                src={user.avatar} 
-                                alt={user.Name} 
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="bg-primary h-full w-full flex items-center justify-center text-white font-medium">
-                                {user.Name?.charAt(0) || user.Email?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{user.Name || 'Anonymous User'}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {user.Email || 'No email'}
-                            </p>
+                    <AnimatePresence>
+                      {leaderboardData.map((user, idx) => (
+                        <motion.div
+                          key={user.id}
+                          className={`grid grid-cols-12 gap-4 items-center py-3 px-2 rounded-lg transition-colors ${user.rank <= 3 ? 'bg-gradient-to-r from-yellow-50/60 via-amber-50/40 to-white dark:from-yellow-900/30 dark:via-amber-900/20 dark:to-gray-900/10' : 'hover:bg-blue-50/40 dark:hover:bg-blue-900/20'}`}
+                          initial={{ opacity: 0, y: 24 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 24 }}
+                          transition={{ duration: 0.4, delay: idx * 0.04 }}
+                          whileHover={{ scale: 1.02, boxShadow: '0 2px 16px 0 rgba(80,120,255,0.08)' }}
+                        >
+                          <div className="col-span-1 text-center">
+                            {getRankBadge(user.rank)}
                           </div>
-                        </div>
-                        <div className="col-span-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-lg font-bold">{user.skillCount}</span>
-                            <Award className={`h-5 w-5 ${
-                              user.rank === 1 ? 'text-yellow-500' : 
-                              user.rank === 2 ? 'text-gray-400' : 
-                              user.rank === 3 ? 'text-amber-700' : 'text-primary'
-                            }`} />
+                          <div className="col-span-7 flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border-2 border-primary/30 shadow-sm">
+                              {user.avatar ? (
+                                <img src={user.avatar} alt={user.Name} className="object-cover" />
+                              ) : (
+                                <div className="bg-primary h-full w-full flex items-center justify-center text-white text-lg font-medium">
+                                  {user.Name?.charAt(0) || user.Email?.charAt(0) || '?'}
+                                </div>
+                              )}
+                            </Avatar>
+                            <span className="font-semibold text-gray-800 dark:text-gray-100 truncate">
+                              {user.Name || 'Anonymous'}
+                            </span>
                           </div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {user.skillCount === 1 ? 'skill' : 'skills'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                          <div className="col-span-4 text-right">
+                            <span className="inline-flex items-center gap-1 font-bold text-primary dark:text-yellow-400">
+                              {user.skillCount}
+                              <Award className="h-4 w-4 text-primary dark:text-yellow-400" />
+                            </span>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </CardContent>
-              </Card>
+              </motion.div>
             </>
           ) : (
-            <div className="text-center py-24 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <Users className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-2xl font-medium mb-2">No users found</h3>
-              <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                There are no users in the leaderboard yet. Users will appear here once they start acquiring skills.
-              </p>
+            <div className="text-center py-24">
+              <p className="text-gray-500 dark:text-gray-400">No leaderboard data available.</p>
             </div>
           )}
         </div>
       </main>
-      
       <Footer />
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
@@ -86,12 +85,13 @@ const Home = () => {
               </div>
             ) : allCourses.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allCourses.map((course) => (
-                  <CourseCard 
-                    key={course.id} 
-                    course={course} 
-                    isEnrolled={enrolledCourses.some(ec => ec.id === course.id)}
-                  />
+                {allCourses.map((course, idx) => (
+                  <div key={course.id} style={{ animationDelay: `${idx * 80}ms` }} className="animate-pop-up">
+                    <CourseCard 
+                      course={course} 
+                      isEnrolled={enrolledCourses.some(ec => ec.id === course.id)}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -114,12 +114,12 @@ const Home = () => {
           {user && userEnrolledCourses.length > 0 && (
             <section>
               <h2 className="text-2xl font-bold mb-6">Your Learning</h2>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userEnrolledCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} isEnrolled={true} />
+                {userEnrolledCourses.map((course, idx) => (
+                  <div key={course.id} style={{ animationDelay: `${idx * 80}ms` }} className="animate-pop-up">
+                    <CourseCard course={course} isEnrolled={true} />
+                  </div>
                 ))}
-                
                 {userEnrolledCourses.length < enrolledCourses.length && (
                   <Link to="/profile" className="flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-xl p-6 h-full">
                     <div className="text-center">

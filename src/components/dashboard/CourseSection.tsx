@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -52,12 +51,13 @@ const CourseSection = ({
     
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => (
-          <CourseCard 
-            key={course.id} 
-            course={course} 
-            isCreator={course.creatorId === user?.id} 
-          />
+        {courses.map((course, idx) => (
+          <div key={course.id} style={{ animationDelay: `${idx * 80}ms` }} className="animate-pop-up">
+            <CourseCard 
+              course={course} 
+              isCreator={course.creatorId === user?.id} 
+            />
+          </div>
         ))}
       </div>
     );
