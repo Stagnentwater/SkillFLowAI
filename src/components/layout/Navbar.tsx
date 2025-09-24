@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, ChevronDown, LogOut, User, BookOpen, BarChart, Briefcase, Info, HelpCircle } from 'lucide-react';
+import { Menu, X, ChevronDown, LogOut, User, BookOpen, BarChart, Briefcase, Info, HelpCircle, HeartHandshake } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,6 +105,10 @@ const Navbar = () => {
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>FAQ</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/counseling/parents')}>
+                  <HeartHandshake className="mr-2 h-4 w-4" />
+                  <span>Parents Counseling</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -151,6 +155,15 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            {isAuthenticated && (
+              <Link
+                to="/counseling/parents"
+                className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Parents Counseling
+              </Link>
+            )}
             {!isAuthenticated && (
               <Link to="/signup" className="sm:hidden">
                 <Button className="w-full">Sign up</Button>

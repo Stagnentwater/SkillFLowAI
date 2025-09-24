@@ -19,6 +19,7 @@ import { Navigate } from 'react-router-dom';
 import { useAdmin } from './context/AdminContext';
 import AboutUs from './pages/AboutUs';
 import FAQ from './pages/FAQ';
+import ParentsCounseling from './pages/ParentsCounseling';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -115,6 +116,10 @@ export const router = createBrowserRouter([
   {
     path: '/FAQ',
     element: <FAQ/>
+  },
+  {
+    path: '/counseling/parents',
+    element: <ParentsCounseling />
   },
   {
     path: '*',
