@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
-import { Menu, X, ChevronDown, LogOut, User, BookOpen, BarChart, Briefcase, Info, HelpCircle, HeartHandshake } from 'lucide-react';
+import { Menu, X, ChevronDown, LogOut, User, BookOpen, BarChart, Briefcase, Info, HelpCircle, HeartHandshake, MapPin } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,9 +34,14 @@ const Navbar = () => {
     { name: 'Home', href: isAuthenticated ? '/home' : '/' },
     { name: 'Courses', href: '/home' },
     { name: 'About Us', href: '/about' },
-    { name: 'FAQ', href: '/faq' }, // Added FAQ link
-    ...(isAuthenticated ? [{ name: 'Job Search', href: '/jobs' },{ name: 'Leaderboard', href: '/leaderboard' }] : []),//added leaderboard
-    
+    { name: 'FAQ', href: '/faq' },
+    { name: 'College Finder', href: '/college-finder' }, // Added College Finder link
+    ...(isAuthenticated
+      ? [
+          { name: 'Job Search', href: '/jobs' },
+          { name: 'Leaderboard', href: '/leaderboard' },
+        ]
+      : []),
   ];
 
   return (
@@ -109,6 +114,10 @@ const Navbar = () => {
                   <HeartHandshake className="mr-2 h-4 w-4" />
                   <span>Parents Counseling</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/college-finder')}>
+                  <MapPin className="mr-2 h-4 w-4" />
+                  <span>College Finder</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -156,13 +165,22 @@ const Navbar = () => {
               </Link>
             ))}
             {isAuthenticated && (
-              <Link
-                to="/counseling/parents"
-                className="text-foreground/80 hover:text-foreground transition-colors py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Parents Counseling
-              </Link>
+              <>
+                <Link
+                  to="/counseling/parents"
+                  className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Parents Counseling
+                </Link>
+                <Link
+                  to="/college-finder"
+                  className="text-foreground/80 hover:text-foreground transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  College Finder
+                </Link>
+              </>
             )}
             {!isAuthenticated && (
               <Link to="/signup" className="sm:hidden">

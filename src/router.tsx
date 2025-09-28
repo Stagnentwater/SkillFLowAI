@@ -20,6 +20,7 @@ import { useAdmin } from './context/AdminContext';
 import AboutUs from './pages/AboutUs';
 import FAQ from './pages/FAQ';
 import ParentsCounseling from './pages/ParentsCounseling';
+import CollegeFinder from './pages/CollegeFinder';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -125,4 +126,8 @@ export const router = createBrowserRouter([
     path: '*',
     element: <NotFound />,
   },
+  {
+    path: '/college-finder',
+    element: <CollegeFinder />
+  }
 ]);
